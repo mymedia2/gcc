@@ -1180,6 +1180,24 @@ fdiagnostics-show-option
 Common Var(flag_diagnostics_show_option) Init(1)
 Amend appropriate diagnostic messages with the command line option that controls them.
 
+;Common Report Enum(diagnostic_format_t) Var(diagnostic_format) Init(DIAGNOSTICS_FORMAT_TEXT)
+fdiagnostics-output-format=
+Driver Common Joined RejectNegative Var(flag_diagnostics_format) Enum(diagnostic_format_t) Init(DIAGNOSTICS_FORMAT_TEXT)
+-fdiagnostics-output-format=[text|xml]	Output format of diagnostics
+
+; Required for these enum values.
+SourceInclude
+diagnostic.h
+
+Enum
+Name(diagnostic_format_t) Type(int) UnknownError(unrecognized diagnostics output format %qs)
+
+EnumValue
+Enum(diagnostic_format_t) String(text) Value(DIAGNOSTICS_FORMAT_TEXT)
+
+EnumValue
+Enum(diagnostic_format_t) String(xml) Value(DIAGNOSTICS_FORMAT_XML)
+
 fdisable-
 Common Joined RejectNegative Var(common_deferred_options) Defer
 -fdisable-[tree|rtl|ipa]-<pass>=range1+range2 disables an optimization pass.

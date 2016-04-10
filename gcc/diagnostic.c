@@ -696,6 +696,12 @@ diagnostic_report_diagnostic (diagnostic_context *context,
   if (diagnostic->kind == DK_NOTE && context->inhibit_notes_p)
     return false;
 
+  // maybe insert our code here
+  if (context->xml_output_format == DIAGNOSTICS_FORMAT_XML)
+    {
+      puts("Flag of XML diagnostics works!");
+    }
+
   if (context->lock > 0)
     {
       /* If we're reporting an ICE in the middle of some other error,

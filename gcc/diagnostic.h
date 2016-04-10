@@ -24,6 +24,15 @@ along with GCC; see the file COPYING3.  If not see
 #include "pretty-print.h"
 #include "diagnostic-core.h"
 
+/* What format output diagnostics
+   o DIAGNOSTICS_FORMAT_TEXT: text human readable style
+   o DIAGNOSTICS_FORMAT_XML: in XML for IDE. */
+typedef enum
+{
+  DIAGNOSTICS_FORMAT_TEXT,
+  DIAGNOSTICS_FORMAT_XML
+} diagnostic_output_format_t;
+
 /* A diagnostic is described by the MESSAGE to send, the FILE and LINE of
    its context and its KIND (ice, error, warning, note, ...)  See complete
    list in diagnostic.def.  */
@@ -201,6 +210,9 @@ struct diagnostic_context
      source code (to avoid e.g. colorizing just the first character in
      a token, which would look strange).  */
   bool colorize_source_p;
+
+  /* Whether to output diagnostics in XML format */
+  bool xml_output_format;
 };
 
 static inline void
