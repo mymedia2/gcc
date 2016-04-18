@@ -31,6 +31,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "backtrace.h"
 #include "diagnostic.h"
 #include "diagnostic-color.h"
+#include "diagnostic-xml.h"
 
 #ifdef HAVE_TERMIOS_H
 # include <termios.h>
@@ -696,12 +697,6 @@ diagnostic_report_diagnostic (diagnostic_context *context,
   if (diagnostic->kind == DK_NOTE && context->inhibit_notes_p)
     return false;
 
-  // maybe insert our code here
-  if (context->xml_output_format == DIAGNOSTICS_FORMAT_XML)
-    {
-      puts("Flag of XML diagnostics works!");
-    }
-
   if (context->lock > 0)
     {
       /* If we're reporting an ICE in the middle of some other error,
@@ -777,6 +772,12 @@ diagnostic_report_diagnostic (diagnostic_context *context,
     }
 
   context->lock++;
+
+  // maybe insert our code here
+  if (context->xml_output_format == DIAGNOSTICS_FORMAT_XML)
+    {
+	  output_xml_diagnositc (context, diagnostic);
+    }
 
   if (diagnostic->kind == DK_ICE || diagnostic->kind == DK_ICE_NOBT)
     {
