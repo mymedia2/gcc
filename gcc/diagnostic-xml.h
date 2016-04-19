@@ -21,9 +21,11 @@ along with GCC; see the file COPYING3.  If not see
 #ifndef GCC_DIAGNOSTIC_XML_H
 #define GCC_DIAGNOSTIC_XML_H
 
+#include "pretty-print.h"
 #include "diagnostic.h"
 
-void output_xml_diagnositc (diagnostic_context *context,
-                            diagnostic_info *diagnostic);
+bool
+output_xml_diagnositc (diagnostic_context *context,
+                       diagnostic_info *diagnostic);
 
 #endif  // GCC_DIAGNOSTIC_XML_H

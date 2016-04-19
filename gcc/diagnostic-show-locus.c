@@ -1093,8 +1093,6 @@ void
 diagnostic_show_locus (diagnostic_context * context,
 		       const diagnostic_info *diagnostic)
 {
-  pp_newline (context->printer);
-
   if (!context->show_caret
       || diagnostic_location (diagnostic, 0) <= BUILTINS_LOCATION
       || diagnostic_location (diagnostic, 0) == context->last_location)

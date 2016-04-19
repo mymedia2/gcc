@@ -573,7 +573,9 @@ void
 default_diagnostic_finalizer (diagnostic_context *context,
 			      diagnostic_info *diagnostic)
 {
-  diagnostic_show_locus (context, diagnostic);
+  pp_newline (context->printer);
+  if (context->xml_output_format)
+	diagnostic_show_locus (context, diagnostic);
   pp_destroy_prefix (context->printer);
   pp_flush (context->printer);
 }
@@ -771,13 +773,18 @@ diagnostic_report_diagnostic (diagnostic_context *context,
 	return false;
     }
 
-  context->lock++;
+  if (diagnostic->kind == DK_ERROR && orig_diag_kind == DK_WARNING)
+    ++diagnostic_kind_count (context, DK_WERROR);
+  else
+    ++diagnostic_kind_count (context, diagnostic->kind);
 
   // maybe insert our code here
   if (context->xml_output_format == DIAGNOSTICS_FORMAT_XML)
     {
-	  output_xml_diagnositc (context, diagnostic);
+	  return output_xml_diagnositc (context, diagnostic);
     }
+
+  context->lock++;
 
   if (diagnostic->kind == DK_ICE || diagnostic->kind == DK_ICE_NOBT)
     {
@@ -800,10 +807,6 @@ diagnostic_report_diagnostic (diagnostic_context *context,
 				    diagnostic->message.format_spec,
 				    diagnostic->message.args_ptr);
     }
-  if (diagnostic->kind == DK_ERROR && orig_diag_kind == DK_WARNING)
-    ++diagnostic_kind_count (context, DK_WERROR);
-  else
-    ++diagnostic_kind_count (context, diagnostic->kind);
 
   saved_format_spec = diagnostic->message.format_spec;
   if (context->show_option_requested)
@@ -918,6 +921,7 @@ diagnostic_append_note (diagnostic_context *context,
   pp_output_formatted_text (context->printer);
   pp_destroy_prefix (context->printer);
   pp_set_prefix (context->printer, saved_prefix);
+  /* TODO */
   diagnostic_show_locus (context, &diagnostic);
   va_end (ap);
 }

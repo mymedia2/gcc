@@ -1093,6 +1093,7 @@ gfc_diagnostic_starter (diagnostic_context *context,
     {
       pp_verbatim (context->printer, locus_prefix);
       free (locus_prefix);
+      pp_newline (context->printer);
       /* Fortran uses an empty line between locus and caret line.  */
       pp_newline (context->printer);
       diagnostic_show_locus (context, diagnostic);
