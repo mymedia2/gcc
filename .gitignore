@@ -49,3 +49,17 @@ lost+found
 # ignore ./contrib/gcc_update output
 LAST_UPDATED
 REVISION
+
+build/
+gmp
+gmp-*.tar.bz2
+gmp-*/
+isl
+isl-*.tar.bz2
+isl-*/
+mpc
+mpc-*.tar.gz
+mpc-*/
+mpfr
+mpfr-*.tar.bz2
+mpfr-*/
