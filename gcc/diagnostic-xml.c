@@ -80,7 +80,7 @@ output_xml_tag (pretty_printer *pp, const std::string &tag_name)
 } /* End of anonymous namespace.  */
 
 bool
-output_xml_diagnositc (diagnostic_context *context,
+output_xml_diagnostic (diagnostic_context *context,
                        diagnostic_info *diagnostic)
 {
   context->lock++;
@@ -95,7 +95,7 @@ output_xml_diagnositc (diagnostic_context *context,
 	      || diagnostic_kind_count (context, DK_SORRY) > 0)
 	  && !context->abort_on_error)
 	{
-	  expanded_location s 
+	  expanded_location s
 	    = expand_location (diagnostic_location (diagnostic));
 	  fnotice (stderr, "%s:%d: confused by earlier errors, bailing out\n",
 		   s.file, s.line);
@@ -110,7 +110,7 @@ output_xml_diagnositc (diagnostic_context *context,
   const char *saved_format_spec = diagnostic->message.format_spec;
   if (context->show_option_requested)
     {
-      char *option_text; 
+      char *option_text;
 
       option_text = context->option_name (context, diagnostic->option_index,
 					  /* TODO: подправить третий параметр */

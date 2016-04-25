@@ -25,7 +25,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "diagnostic.h"
 
 bool
-output_xml_diagnositc (diagnostic_context *context,
+output_xml_diagnostic (diagnostic_context *context,
                        diagnostic_info *diagnostic);
 
 #endif  // GCC_DIAGNOSTIC_XML_H
