@@ -145,65 +145,15 @@ output_buffer_last_position_in_text (const output_buffer *buff)
   return p;
 }
 
-
-/* The type of pretty-printer flags passed to clients.  */
-typedef unsigned int pp_flags;
-
-enum pp_padding
-{
-  pp_none, pp_before, pp_after
-};
-
-/* Structure for switching in and out of verbatim mode in a convenient
-   manner.  */
-struct pp_wrapping_mode_t
-{
-  /* Current prefixing rule.  */
-  diagnostic_prefixing_rule_t rule;
-
-  /* The ideal upper bound of number of characters per line, as suggested
-     by front-end.  */
-  int line_cutoff;
-};
-
-/* Maximum characters per line in automatic line wrapping mode.
-   Zero means don't wrap lines.  */
-#define pp_line_cutoff(PP)  (PP)->wrapping.line_cutoff
-
-/* Prefixing rule used in formatting a diagnostic message.  */
-#define pp_prefixing_rule(PP)  (PP)->wrapping.rule
-
-/* Get or set the wrapping mode as a single entity.  */
-#define pp_wrapping_mode(PP) (PP)->wrapping
-
-/* The type of a hook that formats client-specific data onto a pretty_printer.
-   A client-supplied formatter returns true if everything goes well,
-   otherwise it returns false.  */
-typedef bool (*printer_fn) (pretty_printer *, text_info *, const char *,
-			    int, bool, bool, bool);
-
-/* Client supplied function used to decode formats.  */
-#define pp_format_decoder(PP) (PP)->format_decoder
-
-/* TRUE if a newline character needs to be added before further
-   formatting.  */
-#define pp_needs_newline(PP)  (PP)->need_newline
-
-/* True if PRETTY-PRINTER is in line-wrapping mode.  */
-#define pp_is_wrapping_line(PP) (pp_line_cutoff (PP) > 0)
-
-/* The amount of whitespace to be emitted when starting a new line.  */
-#define pp_indentation(PP) (PP)->indent_skip
-
-/* True if identifiers are translated to the locale character set on
-   output.  */
-#define pp_translate_identifiers(PP) (PP)->translate_identifiers
-
-/* True if colors should be shown.  */
-#define pp_show_color(PP) (PP)->show_color
-
+
 struct base_printer
 {
+  /* The type of a hook that formats client-specific data onto a pretty_printer.
+     A client-supplied formatter returns true if everything goes well,
+     otherwise it returns false.  */
+  typedef bool (*printer_fn) (pretty_printer *, text_info *, const char *,
+			      int, bool, bool, bool);
+
   explicit base_printer ();
 
   virtual ~base_printer ();
@@ -226,23 +176,84 @@ struct base_printer
   bool translate_identifiers;
 };
 
+/* If we haven't already defined a front-end-specific diagnostics
+   style, use the generic one.  */
+#ifdef GCC_DIAG_STYLE
+#define GCC_PPDIAG_STYLE GCC_DIAG_STYLE
+#else
+#define GCC_PPDIAG_STYLE __gcc_diag__
+#endif
+
+#if GCC_VERSION >= 3005
+#define ATTRIBUTE_GCC_PPDIAG(m, n) __attribute__ ((__format__ (GCC_PPDIAG_STYLE, m ,n))) ATTRIBUTE_NONNULL(m)
+#else
+#define ATTRIBUTE_GCC_PPDIAG(m, n) ATTRIBUTE_NONNULL(m)
+#endif
+
 /* The data structure that contains the bare minimum required to do
    proper pretty-printing.  Clients may derived from this structure
    and add additional fields they need.  */
 struct pretty_printer
   : base_printer
 {
+  /* The type of pretty-printer flags passed to clients.  */
+  typedef unsigned int flags_t;
+
+  enum padding_t { pp_none, pp_before, pp_after };
+
+  /* Structure for switching in and out of verbatim mode in a convenient
+     manner.  */
+  struct wrapping_mode_t
+  {
+    /* Current prefixing rule.  */
+    diagnostic_prefixing_rule_t rule;
+
+    /* The ideal upper bound of number of characters per line, as suggested
+       by front-end.  */
+    int line_cutoff;
+  };
+
   // Default construct a pretty printer with specified prefix
   // and a maximum line length cut off limit.
   explicit pretty_printer (const char* = NULL, int = 0);
 
   virtual ~pretty_printer ();
 
+  const char *get_prefix () const { return prefix; }
+
+  void set_line_maximum_length (int);
+  void set_prefix (const char *);
+  void destroy_prefix ();
+  int remaining_character_count_for_line ();
+  void clear_output_area ();
+  const char *formatted_text ();
+  const char *last_position_in_text () const;
+  void emit_prefix ();
+  void append_text (const char *, const char *);
+  void newline_and_flush ();
+  void newline_and_indent (int);
+  void separate_with (char);
+  void printf (const char *, ...) ATTRIBUTE_GCC_PPDIAG(2,3);
+  void verbatim (const char *, ...) ATTRIBUTE_GCC_PPDIAG(2,3);
+  void flush ();
+  void really_flush ();
+  void format (text_info *);
+  void output_formatted_text ();
+  void format_verbatim (text_info *);
+  void indent ();
+  void newline ();
+  void character (int);
+  void string (const char *);
+  void write_text_to_stream ();
+  void write_text_as_dot_label_to_stream (bool);
+  void maybe_space ();
+  wrapping_mode_t set_verbatim_wrapping ();
+
   /* The prefix for each new line.  */
   const char *prefix;
 
   /* Where to put whitespace around the entity being formatted.  */
-  pp_padding padding;
+  padding_t padding;
 
   /* The real upper bound of number of characters per line, taking into
      account the case of a very very looong prefix.  */
@@ -252,7 +263,7 @@ struct pretty_printer
   int indent_skip;
 
   /* Current wrapping mode.  */
-  pp_wrapping_mode_t wrapping;
+  wrapping_mode_t wrapping;
 
   /* Nonzero if current PREFIX was emitted at least once.  */
   bool emitted_prefix;
@@ -264,8 +275,51 @@ struct pretty_printer
   bool show_color;
 };
 
-static inline const char *
-pp_get_prefix (const pretty_printer *pp) { return pp->prefix; }
+
+/* Deprecated types for compatibility with old code. */
+typedef base_printer::printer_fn printer_fn;
+typedef pretty_printer::flags_t pp_flags;
+typedef pretty_printer::padding_t pp_padding;
+namespace
+{
+  const pretty_printer::padding_t pp_none = pretty_printer::pp_none;
+  const pretty_printer::padding_t pp_before = pretty_printer::pp_before;
+  const pretty_printer::padding_t pp_after =  pretty_printer::pp_after;
+}
+typedef pretty_printer::wrapping_mode_t pp_wrapping_mode_t;
+
+/* Deprecated macros for compatibility with old code */
+#define pp_get_prefix(PP) (PP)->get_prefix ()
+
+/* Maximum characters per line in automatic line wrapping mode.
+   Zero means don't wrap lines.  */
+#define pp_line_cutoff(PP)  (PP)->wrapping.line_cutoff
+
+/* Prefixing rule used in formatting a diagnostic message.  */
+#define pp_prefixing_rule(PP)  (PP)->wrapping.rule
+
+/* Get or set the wrapping mode as a single entity.  */
+#define pp_wrapping_mode(PP) (PP)->wrapping
+
+/* Client supplied function used to decode formats.  */
+#define pp_format_decoder(PP) (PP)->format_decoder
+
+/* TRUE if a newline character needs to be added before further
+   formatting.  */
+#define pp_needs_newline(PP)  (PP)->need_newline
+
+/* True if PRETTY-PRINTER is in line-wrapping mode.  */
+#define pp_is_wrapping_line(PP) (pp_line_cutoff (PP) > 0)
+
+/* The amount of whitespace to be emitted when starting a new line.  */
+#define pp_indentation(PP) (PP)->indent_skip
+
+/* True if identifiers are translated to the locale character set on
+   output.  */
+#define pp_translate_identifiers(PP) (PP)->translate_identifiers
+
+/* True if colors should be shown.  */
+#define pp_show_color(PP) (PP)->show_color
 
 #define pp_space(PP)            pp_character (PP, ' ')
 #define pp_left_paren(PP)       pp_character (PP, '(')
@@ -332,63 +386,37 @@ pp_get_prefix (const pretty_printer *pp) { return pp->prefix; }
 
 #define pp_buffer(PP) (PP)->buffer
 
-extern void pp_set_line_maximum_length (pretty_printer *, int);
-extern void pp_set_prefix (pretty_printer *, const char *);
-extern void pp_destroy_prefix (pretty_printer *);
-extern int pp_remaining_character_count_for_line (pretty_printer *);
-extern void pp_clear_output_area (pretty_printer *);
-extern const char *pp_formatted_text (pretty_printer *);
-extern const char *pp_last_position_in_text (const pretty_printer *);
-extern void pp_emit_prefix (pretty_printer *);
-extern void pp_append_text (pretty_printer *, const char *, const char *);
-extern void pp_newline_and_flush (pretty_printer *);
-extern void pp_newline_and_indent (pretty_printer *, int);
-extern void pp_separate_with (pretty_printer *, char);
-
-/* If we haven't already defined a front-end-specific diagnostics
-   style, use the generic one.  */
-#ifdef GCC_DIAG_STYLE
-#define GCC_PPDIAG_STYLE GCC_DIAG_STYLE
-#else
-#define GCC_PPDIAG_STYLE __gcc_diag__
-#endif
+#define pp_set_line_maximum_length(PP, length) (PP)->set_line_maximum_length (length)
+#define pp_set_prefix(PP, prefix) (PP)->set_prefix (prefix)
+#define pp_destroy_prefix(PP) (PP)->destroy_prefix ()
+#define pp_remaining_character_count_for_line(PP) (PP)->remaining_character_count_for_line ()
+#define pp_clear_output_area(PP) (PP)->clear_output_area ()
+#define pp_formatted_text(PP) (PP)->formatted_text ()
+#define pp_last_position_in_text(PP) (PP)->last_position_in_text ()
+#define pp_emit_prefix(PP) (PP)->emit_prefix ()
+#define pp_append_text(PP, start, end) (PP)->append_text (start, end)
+#define pp_newline_and_flush(PP) (PP)->newline_and_flush ()
+#define pp_newline_and_indent(PP, n) (PP)->newline_and_indent (n)
+#define pp_separate_with(PP, c) (PP)->separate_with (c)
 
 /* This header may be included before diagnostics-core.h, hence the duplicate
    definitions to allow for GCC-specific formats.  */
-#if GCC_VERSION >= 3005
-#define ATTRIBUTE_GCC_PPDIAG(m, n) __attribute__ ((__format__ (GCC_PPDIAG_STYLE, m ,n))) ATTRIBUTE_NONNULL(m)
-#else
-#define ATTRIBUTE_GCC_PPDIAG(m, n) ATTRIBUTE_NONNULL(m)
-#endif
-extern void pp_printf (pretty_printer *, const char *, ...)
-     ATTRIBUTE_GCC_PPDIAG(2,3);
+#define pp_printf(PP, ...) (PP)->printf (__VA_ARGS__)
+#define pp_verbatim(PP, ...) (PP)->verbatim (__VA_ARGS__)
+#define pp_flush(PP) (PP)->flush ()
+#define pp_really_flush(PP) (PP)->really_flush ()
+#define pp_format(PP, text) (PP)->format (text)
+#define pp_output_formatted_text(PP) (PP)->output_formatted_text ()
+#define pp_format_verbatim(PP, text) (PP)->format_verbatim(text)
 
-extern void pp_verbatim (pretty_printer *, const char *, ...)
-     ATTRIBUTE_GCC_PPDIAG(2,3);
-extern void pp_flush (pretty_printer *);
-extern void pp_really_flush (pretty_printer *);
-extern void pp_format (pretty_printer *, text_info *);
-extern void pp_output_formatted_text (pretty_printer *);
-extern void pp_format_verbatim (pretty_printer *, text_info *);
-
-extern void pp_indent (pretty_printer *);
-extern void pp_newline (pretty_printer *);
-extern void pp_character (pretty_printer *, int);
-extern void pp_string (pretty_printer *, const char *);
-extern void pp_write_text_to_stream (pretty_printer *);
-extern void pp_write_text_as_dot_label_to_stream (pretty_printer *, bool);
-extern void pp_maybe_space (pretty_printer *);
-
-/* Switch into verbatim mode and return the old mode.  */
-static inline pp_wrapping_mode_t
-pp_set_verbatim_wrapping_ (pretty_printer *pp)
-{
-  pp_wrapping_mode_t oldmode = pp_wrapping_mode (pp);
-  pp_line_cutoff (pp) = 0;
-  pp_prefixing_rule (pp) = DIAGNOSTICS_SHOW_PREFIX_NEVER;
-  return oldmode;
-}
-#define pp_set_verbatim_wrapping(PP) pp_set_verbatim_wrapping_ (PP)
+#define pp_indent(PP) (PP)->indent ()
+#define pp_newline(PP) (PP)->newline ()
+#define pp_character(PP, c) (PP)->character (c)
+#define pp_string(PP, str) (PP)->string(str)
+#define pp_write_text_to_stream(PP) (PP)->write_text_to_stream ()
+#define pp_write_text_as_dot_label_to_stream(PP, for_record) (PP)->write_text_as_dot_label_to_stream (for_record)
+#define pp_maybe_space(PP) (PP)->maybe_space ()
+#define pp_set_verbatim_wrapping(PP) (PP)->set_verbatim_wrapping ()
 
 extern const char *identifier_to_locale (const char *);
 extern void *(*identifier_to_locale_alloc) (size_t);
