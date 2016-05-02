@@ -202,19 +202,41 @@ typedef bool (*printer_fn) (pretty_printer *, text_info *, const char *,
 /* True if colors should be shown.  */
 #define pp_show_color(PP) (PP)->show_color
 
+struct base_printer
+{
+  explicit base_printer ();
+
+  virtual ~base_printer ();
+
+  /* Where we print external representation of ENTITY.  */
+  output_buffer *buffer;
+
+  /* If non-NULL, this function formats a TEXT into the BUFFER.  When called,
+     TEXT->format_spec points to a format code.  FORMAT_DECODER should call
+     pp_string (and related functions) to add data to the BUFFER.
+     FORMAT_DECODER can read arguments from *TEXT->args_pts using VA_ARG.
+     If the BUFFER needs additional characters from the format string, it
+     should advance the TEXT->format_spec as it goes.  When FORMAT_DECODER
+     returns, TEXT->format_spec should point to the last character processed.
+  */
+  printer_fn format_decoder;
+
+  /* Nonzero means identifiers are translated to the locale character
+     set on output.  */
+  bool translate_identifiers;
+};
+
 /* The data structure that contains the bare minimum required to do
    proper pretty-printing.  Clients may derived from this structure
    and add additional fields they need.  */
 struct pretty_printer
+  : base_printer
 {
   // Default construct a pretty printer with specified prefix
   // and a maximum line length cut off limit.
   explicit pretty_printer (const char* = NULL, int = 0);
 
   virtual ~pretty_printer ();
-
-  /* Where we print external representation of ENTITY.  */
-  output_buffer *buffer;
 
   /* The prefix for each new line.  */
   const char *prefix;
@@ -232,25 +254,11 @@ struct pretty_printer
   /* Current wrapping mode.  */
   pp_wrapping_mode_t wrapping;
 
-  /* If non-NULL, this function formats a TEXT into the BUFFER.  When called,
-     TEXT->format_spec points to a format code.  FORMAT_DECODER should call
-     pp_string (and related functions) to add data to the BUFFER.
-     FORMAT_DECODER can read arguments from *TEXT->args_pts using VA_ARG.
-     If the BUFFER needs additional characters from the format string, it
-     should advance the TEXT->format_spec as it goes.  When FORMAT_DECODER
-     returns, TEXT->format_spec should point to the last character processed.
-  */
-  printer_fn format_decoder;
-
   /* Nonzero if current PREFIX was emitted at least once.  */
   bool emitted_prefix;
 
   /* Nonzero means one should emit a newline before outputting anything.  */
   bool need_newline;
-
-  /* Nonzero means identifiers are translated to the locale character
-     set on output.  */
-  bool translate_identifiers;
 
   /* Nonzero means that text should be colorized.  */
   bool show_color;

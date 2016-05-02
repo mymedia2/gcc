@@ -36,12 +36,13 @@ xmlspecialchars (std::string str)
   std::string::size_type index = 0;
   while ((index = str.find_first_of ("<>&\"'", index)) != std::string::npos)
     {
+      /* NB: quadratic complexity */
       const std::string entity = str[index] == '<' ? "&lt;" :
-                                 str[index] == '>' ? "&gt;" :
-                                 str[index] == '&' ? "&amp;" :
-                                 str[index] == '"' ? "&quot;" :
-                                 str[index] == '\'' ? "&apos;" :
-                                 str.substr (index, 1);
+				 str[index] == '>' ? "&gt;" :
+				 str[index] == '&' ? "&amp;" :
+				 str[index] == '"' ? "&quot;" :
+				 str[index] == '\'' ? "&apos;" :
+				 str.substr (index, 1);
       str.replace (index, 1, entity);
       index += entity.length ();
     }
@@ -80,8 +81,7 @@ output_xml_tag (pretty_printer *pp, const std::string &tag_name)
 } /* End of anonymous namespace.  */
 
 bool
-output_xml_diagnostic (diagnostic_context *context,
-                       diagnostic_info *diagnostic)
+output_xml_diagnostic (diagnostic_context *context, diagnostic_info *diagnostic)
 {
   context->lock++;
 
@@ -128,7 +128,7 @@ output_xml_diagnostic (diagnostic_context *context,
 
   /* TODO: куда-нибудь запихнуть в более подходящее место */
   if (context->xml_output_format)
-	context->printer->show_color = false;
+    context->printer->show_color = false;
 
   diagnostic->message.x_data = &diagnostic->x_data;
   diagnostic->x_data = NULL;

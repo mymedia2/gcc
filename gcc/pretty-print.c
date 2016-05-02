@@ -801,20 +801,30 @@ pp_emit_prefix (pretty_printer *pp)
     }
 }
 
+base_printer::base_printer ()
+  : buffer (new (XCNEW (output_buffer)) output_buffer ()),
+    format_decoder (),
+    translate_identifiers (true)
+{
+}
+
+base_printer::~base_printer ()
+{
+  buffer->~output_buffer ();
+  XDELETE (buffer);
+}
+
 /* Construct a PRETTY-PRINTER with PREFIX and of MAXIMUM_LENGTH
    characters per line.  */
 
 pretty_printer::pretty_printer (const char *p, int l)
-  : buffer (new (XCNEW (output_buffer)) output_buffer ()),
-    prefix (),
+  : prefix (),
     padding (pp_none),
     maximum_length (),
     indent_skip (),
     wrapping (),
-    format_decoder (),
     emitted_prefix (),
     need_newline (),
-    translate_identifiers (true),
     show_color ()
 {
   pp_line_cutoff (this) = l;
@@ -825,8 +835,6 @@ pretty_printer::pretty_printer (const char *p, int l)
 
 pretty_printer::~pretty_printer ()
 {
-  buffer->~output_buffer ();
-  XDELETE (buffer);
 }
 
 /* Append a string delimited by START and END to the output area of

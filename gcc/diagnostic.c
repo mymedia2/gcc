@@ -781,7 +781,7 @@ diagnostic_report_diagnostic (diagnostic_context *context,
   // maybe insert our code here
   if (context->xml_output_format == DIAGNOSTICS_FORMAT_XML)
     {
-	  return output_xml_diagnostic (context, diagnostic);
+      return output_xml_diagnostic (context, diagnostic);
     }
 
   context->lock++;
