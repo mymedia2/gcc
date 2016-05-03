@@ -173,30 +173,12 @@ diagnostic_initialize (diagnostic_context *context, int n_opts)
 
 /* Maybe initialize the color support. We require clients to do this
    explicitly, since most clients don't want color.  When called
-   without a VALUE, it initializes with DIAGNOSTICS_COLOR_DEFAULT.  */
-
+   without a VALUE, it initializes with DIAGNOSTICS_COLOR_DEFAULT.
+   Probably this function must be removed. */
 void
 diagnostic_color_init (diagnostic_context *context, int value /*= -1 */)
 {
-  /* value == -1 is the default value.  */
-  if (value < 0)
-    {
-      /* If DIAGNOSTICS_COLOR_DEFAULT is -1, default to
-	 -fdiagnostics-color=auto if GCC_COLORS is in the environment,
-	 otherwise default to -fdiagnostics-color=never, for other
-	 values default to that
-	 -fdiagnostics-color={never,auto,always}.  */
-      if (DIAGNOSTICS_COLOR_DEFAULT == -1)
-	{
-	  if (!getenv ("GCC_COLORS"))
-	    return;
-	  value = DIAGNOSTICS_COLOR_AUTO;
-	}
-      else
-	value = DIAGNOSTICS_COLOR_DEFAULT;
-    }
-  pp_show_color (context->printer)
-    = colorize_init ((diagnostic_color_rule_t) value);
+  context->printer->initialize_color (value);
 }
 
 /* Do any cleaning up required after the last diagnostic is emitted.  */

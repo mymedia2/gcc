@@ -127,8 +127,8 @@ output_xml_diagnostic (diagnostic_context *context, diagnostic_info *diagnostic)
     }
 
   /* TODO: куда-нибудь запихнуть в более подходящее место */
-  if (context->xml_output_format)
-    context->printer->show_color = false;
+  //if (context->xml_output_format)
+  //  context->printer->show_color = false;
 
   diagnostic->message.x_data = &diagnostic->x_data;
   diagnostic->x_data = NULL;

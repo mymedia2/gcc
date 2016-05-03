@@ -3171,13 +3171,13 @@ cp_print_error_function (diagnostic_context *context,
     return;
   if (diagnostic_last_function_changed (context, diagnostic))
     {
-      const char *old_prefix = context->printer->prefix;
+      const char *old_prefix = context->printer->get_prefix ();
       const char *file = LOCATION_FILE (diagnostic_location (diagnostic));
       tree abstract_origin = diagnostic_abstract_origin (diagnostic);
       char *new_prefix = (file && abstract_origin == NULL)
 			 ? file_name_as_prefix (context, file) : NULL;
 
-      pp_set_prefix (context->printer, new_prefix);
+      context->printer->set_prefix (new_prefix);
 
       if (current_function_decl == NULL)
 	pp_string (context->printer, _("At global scope:"));
@@ -3270,7 +3270,7 @@ cp_print_error_function (diagnostic_context *context,
 
       diagnostic_set_last_function (context, diagnostic);
       pp_destroy_prefix (context->printer);
-      context->printer->prefix = old_prefix;
+      context->printer->set_prefix (old_prefix);
     }
 }
 

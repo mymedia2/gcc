@@ -220,15 +220,21 @@ struct pretty_printer
   virtual ~pretty_printer ();
 
   const char *get_prefix () const { return prefix; }
-
-  void set_line_maximum_length (int);
   void set_prefix (const char *);
   void destroy_prefix ();
+  void emit_prefix ();
+
+  /* True if colors should be shown.  */
+  bool get_color_state () { return show_color; }
+
+  /* Maybe initialize the color support. */
+  void initialize_color (int value = -1);
+
+  void set_line_maximum_length (int);
   int remaining_character_count_for_line ();
   void clear_output_area ();
   const char *formatted_text ();
   const char *last_position_in_text () const;
-  void emit_prefix ();
   void append_text (const char *, const char *);
   void newline_and_flush ();
   void newline_and_indent (int);
@@ -249,8 +255,8 @@ struct pretty_printer
   void maybe_space ();
   wrapping_mode_t set_verbatim_wrapping ();
 
-  /* The prefix for each new line.  */
-  const char *prefix;
+  /* True if PRETTY-PRINTER is in line-wrapping mode.  */
+  bool is_wrapping_line () { return wrapping.line_cutoff > 0; }
 
   /* Where to put whitespace around the entity being formatted.  */
   padding_t padding;
@@ -270,6 +276,16 @@ struct pretty_printer
 
   /* Nonzero means one should emit a newline before outputting anything.  */
   bool need_newline;
+
+private:
+  void clear_state ();
+  void wrap_text (const char *start, const char *end);
+  void maybe_wrap_text (const char *start, const char *end);
+  void append_r (const char *start, int length);
+  void set_real_maximum_length ();
+
+  /* The prefix for each new line.  */
+  const char *prefix;
 
   /* Nonzero means that text should be colorized.  */
   bool show_color;
@@ -309,7 +325,7 @@ typedef pretty_printer::wrapping_mode_t pp_wrapping_mode_t;
 #define pp_needs_newline(PP)  (PP)->need_newline
 
 /* True if PRETTY-PRINTER is in line-wrapping mode.  */
-#define pp_is_wrapping_line(PP) (pp_line_cutoff (PP) > 0)
+#define pp_is_wrapping_line(PP) (PP)->is_wrapping_line ()
 
 /* The amount of whitespace to be emitted when starting a new line.  */
 #define pp_indentation(PP) (PP)->indent_skip
@@ -319,7 +335,7 @@ typedef pretty_printer::wrapping_mode_t pp_wrapping_mode_t;
 #define pp_translate_identifiers(PP) (PP)->translate_identifiers
 
 /* True if colors should be shown.  */
-#define pp_show_color(PP) (PP)->show_color
+#define pp_show_color(PP) (PP)->get_color_state ()
 
 #define pp_space(PP)            pp_character (PP, ' ')
 #define pp_left_paren(PP)       pp_character (PP, '(')
@@ -417,6 +433,12 @@ typedef pretty_printer::wrapping_mode_t pp_wrapping_mode_t;
 #define pp_write_text_as_dot_label_to_stream(PP, for_record) (PP)->write_text_as_dot_label_to_stream (for_record)
 #define pp_maybe_space(PP) (PP)->maybe_space ()
 #define pp_set_verbatim_wrapping(PP) (PP)->set_verbatim_wrapping ()
+
+#define pp_clear_state(PP) (PP)->clear_state ()
+#define pp_wrap_text(PP, start, end) (PP)->wrap_text (start, end)
+#define pp_maybe_wrap_text(PP, start, end) (PP)->maybe_wrap_text (start, end)
+#define pp_append_r(PP, start, length) (PP)->append_r (start, length)
+#define pp_set_real_maximum_length(PP) (PP)->set_real_maximum_length ()
 
 extern const char *identifier_to_locale (const char *);
 extern void *(*identifier_to_locale_alloc) (size_t);

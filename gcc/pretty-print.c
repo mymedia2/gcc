@@ -104,9 +104,10 @@ output_buffer::~output_buffer ()
 
 /* Subroutine of pp_set_maximum_length.  Set up PRETTY-PRINTER's
    internal maximum characters per line.  */
-static void
-pp_set_real_maximum_length (pretty_printer *pp)
+void
+pretty_printer::set_real_maximum_length ()
 {
+  pretty_printer *pp = this;
   /* If we're told not to wrap lines then do the obvious thing.  In case
      we'll emit prefix only once per message, it is appropriate
      not to increase unnecessarily the line-length cut-off.  */
@@ -127,9 +128,10 @@ pp_set_real_maximum_length (pretty_printer *pp)
 }
 
 /* Clear PRETTY-PRINTER's output state.  */
-static inline void
-pp_clear_state (pretty_printer *pp)
+void
+pretty_printer::clear_state ()
 {
+  pretty_printer *pp = this;
   pp->emitted_prefix = false;
   pp_indentation (pp) = 0;
 }
@@ -209,9 +211,10 @@ pretty_printer::write_text_as_dot_label_to_stream (bool for_record)
 }
 
 /* Wrap a text delimited by START and END into PRETTY-PRINTER.  */
-static void
-pp_wrap_text (pretty_printer *pp, const char *start, const char *end)
+void
+pretty_printer::wrap_text (const char *start, const char *end)
 {
+  pretty_printer *pp = this;
   bool wrapping_line = pp_is_wrapping_line (pp);
 
   while (start != end)
@@ -242,9 +245,10 @@ pp_wrap_text (pretty_printer *pp, const char *start, const char *end)
 }
 
 /* Same as pp_wrap_text but wrap text only when in line-wrapping mode.  */
-static inline void
-pp_maybe_wrap_text (pretty_printer *pp, const char *start, const char *end)
+void
+pretty_printer::maybe_wrap_text (const char *start, const char *end)
 {
+  pretty_printer *pp = this;
   if (pp_is_wrapping_line (pp))
     pp_wrap_text (pp, start, end);
   else
@@ -253,9 +257,10 @@ pp_maybe_wrap_text (pretty_printer *pp, const char *start, const char *end)
 
 /* Append to the output area of PRETTY-PRINTER a string specified by its
    STARTing character and LENGTH.  */
-static inline void
-pp_append_r (pretty_printer *pp, const char *start, int length)
+void
+pretty_printer::append_r (const char *start, int length)
 {
+  pretty_printer *pp = this;
   output_buffer_append_r (pp_buffer (pp), start, length);
 }
 
@@ -1024,6 +1029,29 @@ pretty_printer::set_verbatim_wrapping ()
   wrapping.line_cutoff = 0;
   wrapping.rule = DIAGNOSTICS_SHOW_PREFIX_NEVER;
   return oldmode;
+}
+
+void
+pretty_printer::initialize_color (int value)
+{
+  /* value == -1 is the default value.  */
+  if (value < 0)
+    {
+      /* If DIAGNOSTICS_COLOR_DEFAULT is -1, default to
+	 -fdiagnostics-color=auto if GCC_COLORS is in the environment,
+	 otherwise default to -fdiagnostics-color=never, for other
+	 values default to that
+	 -fdiagnostics-color={never,auto,always}.  */
+      if (DIAGNOSTICS_COLOR_DEFAULT == -1)
+	{
+	  if (!getenv ("GCC_COLORS"))
+	    return;
+	  value = DIAGNOSTICS_COLOR_AUTO;
+	}
+      else
+	value = DIAGNOSTICS_COLOR_DEFAULT;
+    }
+  show_color = colorize_init ((diagnostic_color_rule_t) value);
 }
 
 

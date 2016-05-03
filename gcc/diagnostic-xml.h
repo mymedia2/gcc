@@ -24,6 +24,11 @@ along with GCC; see the file COPYING3.  If not see
 #include "pretty-print.h"
 #include "diagnostic.h"
 
+class xml_printer
+  : public base_printer
+{
+};
+
 bool output_xml_diagnostic (diagnostic_context *context,
 			    diagnostic_info *diagnostic);
 

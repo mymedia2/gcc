@@ -362,12 +362,12 @@ lhd_print_error_function (diagnostic_context *context, const char *file,
 {
   if (diagnostic_last_function_changed (context, diagnostic))
     {
-      const char *old_prefix = context->printer->prefix;
+      const char *old_prefix = context->printer->get_prefix ();
       tree abstract_origin = diagnostic_abstract_origin (diagnostic);
       char *new_prefix = (file && abstract_origin == NULL)
 			 ? file_name_as_prefix (context, file) : NULL;
 
-      pp_set_prefix (context->printer, new_prefix);
+      context->printer->set_prefix (new_prefix);
 
       if (current_function_decl == NULL)
 	pp_printf (context->printer, _("At top level:"));
@@ -465,7 +465,7 @@ lhd_print_error_function (diagnostic_context *context, const char *file,
 
       diagnostic_set_last_function (context, diagnostic);
       pp_newline_and_flush (context->printer);
-      context->printer->prefix = old_prefix;
+      context->printer->set_prefix (old_prefix);
       free ((char*) new_prefix);
     }
 }
