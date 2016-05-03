@@ -146,6 +146,10 @@ output_buffer_last_position_in_text (const output_buffer *buff)
 }
 
 
+extern const char *identifier_to_locale (const char *);
+extern void *(*identifier_to_locale_alloc) (size_t);
+extern void (*identifier_to_locale_free) (void *);
+
 struct base_printer
 {
   /* The type of a hook that formats client-specific data onto a pretty_printer.
@@ -255,6 +259,75 @@ struct pretty_printer
   void maybe_space ();
   wrapping_mode_t set_verbatim_wrapping ();
 
+  void space ()			{ character (' '); }
+  void left_paren ()		{ character ('('); }
+  void right_paren ()		{ character (')'); }
+  void left_bracket ()		{ character ('['); }
+  void right_bracket ()		{ character (']'); }
+  void left_brace ()		{ character ('{'); }
+  void right_brace ()		{ character ('}'); }
+  void semicolon ()		{ character (';'); }
+  void comma ()			{ character (','); }
+  void dot ()			{ character ('.'); }
+  void colon ()			{ character (':'); }
+  void double_colon ()		{ string ("::"); }
+  void arrow ()			{ string ("->"); }
+  void equal ()			{ character ('='); }
+  void question ()		{ character ('?'); }
+  void bar ()			{ character ('|'); }
+  void double_bar ()		{ string ("||"); }
+  void carret ()		{ character ('^'); }
+  void ampersand ()		{ character ('&'); }
+  void double_ampersand ()	{ string ("&&"); }
+  void less ()			{ character ('<'); }
+  void less_equal ()		{ string ("<="); }
+  void greater ()		{ character ('>'); }
+  void greater_equal ()		{ string (">="); }
+  void plus ()			{ character ('+'); }
+  void minus ()			{ character ('-'); }
+  void star ()			{ character ('*'); }
+  void slash ()			{ character ('/'); }
+  void modulo ()		{ character ('%'); }
+  void exclamation ()		{ character ('!'); }
+  void complement ()		{ character ('~'); }
+  void quote ()			{ character ('\''); }
+  void backquote ()		{ character ('`'); }
+  void doublequote ()		{ character ('"'); }
+  void underscore ()		{ character ('_'); }
+
+  void
+  maybe_newline_and_indent (int n)
+    {
+      if (need_newline)
+	newline_and_indent (n);
+    }
+
+  template <typename T>
+  void
+  scalar (const char* format, T scalar)
+    {
+      sprintf (buffer->digit_buffer, format, scalar);
+      string (buffer->digit_buffer);
+    }
+
+  void
+  wide_int (const wide_int_ref &wi, signop sgn)
+    {
+      print_dec (wi, buffer->digit_buffer, sgn);
+      string (buffer->digit_buffer);
+    }
+
+  void decimal_int (int i) { scalar ("%d", i); }
+  void wide_integer (unsigned HOST_WIDE_INT i) { scalar (HOST_WIDE_INT_PRINT_UNSIGNED, i); }
+  void wide_integer (HOST_WIDE_INT i) { scalar (HOST_WIDE_INT_PRINT_DEC, i); }
+  void pointer (void *ptr) { scalar ("%p", ptr); }
+
+  void
+  identifier (const char* id)
+    {
+      string (translate_identifiers ? identifier_to_locale (id) : id);
+    }
+
   /* True if PRETTY-PRINTER is in line-wrapping mode.  */
   bool is_wrapping_line () { return wrapping.line_cutoff > 0; }
 
@@ -337,68 +410,50 @@ typedef pretty_printer::wrapping_mode_t pp_wrapping_mode_t;
 /* True if colors should be shown.  */
 #define pp_show_color(PP) (PP)->get_color_state ()
 
-#define pp_space(PP)            pp_character (PP, ' ')
-#define pp_left_paren(PP)       pp_character (PP, '(')
-#define pp_right_paren(PP)      pp_character (PP, ')')
-#define pp_left_bracket(PP)     pp_character (PP, '[')
-#define pp_right_bracket(PP)    pp_character (PP, ']')
-#define pp_left_brace(PP)       pp_character (PP, '{')
-#define pp_right_brace(PP)      pp_character (PP, '}')
-#define pp_semicolon(PP)        pp_character (PP, ';')
-#define pp_comma(PP)            pp_character (PP, ',')
-#define pp_dot(PP)              pp_character (PP, '.')
-#define pp_colon(PP)            pp_character (PP, ':')
-#define pp_colon_colon(PP)      pp_string (PP, "::")
-#define pp_arrow(PP)            pp_string (PP, "->")
-#define pp_equal(PP)            pp_character (PP, '=')
-#define pp_question(PP)         pp_character (PP, '?')
-#define pp_bar(PP)              pp_character (PP, '|')
-#define pp_bar_bar(PP)          pp_string (PP, "||")
-#define pp_carret(PP)           pp_character (PP, '^')
-#define pp_ampersand(PP)        pp_character (PP, '&')
-#define pp_ampersand_ampersand(PP) pp_string (PP, "&&")
-#define pp_less(PP)             pp_character (PP, '<')
-#define pp_less_equal(PP)       pp_string (PP, "<=")
-#define pp_greater(PP)          pp_character (PP, '>')
-#define pp_greater_equal(PP)    pp_string (PP, ">=")
-#define pp_plus(PP)             pp_character (PP, '+')
-#define pp_minus(PP)            pp_character (PP, '-')
-#define pp_star(PP)             pp_character (PP, '*')
-#define pp_slash(PP)            pp_character (PP, '/')
-#define pp_modulo(PP)           pp_character (PP, '%')
-#define pp_exclamation(PP)      pp_character (PP, '!')
-#define pp_complement(PP)       pp_character (PP, '~')
-#define pp_quote(PP)            pp_character (PP, '\'')
-#define pp_backquote(PP)        pp_character (PP, '`')
-#define pp_doublequote(PP)      pp_character (PP, '"')
-#define pp_underscore(PP)       pp_character (PP, '_')
-#define pp_maybe_newline_and_indent(PP, N) \
-  if (pp_needs_newline (PP)) pp_newline_and_indent (PP, N)
-#define pp_scalar(PP, FORMAT, SCALAR)	                      \
-  do					        	      \
-    {			         			      \
-      sprintf (pp_buffer (PP)->digit_buffer, FORMAT, SCALAR); \
-      pp_string (PP, pp_buffer (PP)->digit_buffer);           \
-    }						              \
-  while (0)
-#define pp_decimal_int(PP, I)  pp_scalar (PP, "%d", I)
-#define pp_unsigned_wide_integer(PP, I) \
-   pp_scalar (PP, HOST_WIDE_INT_PRINT_UNSIGNED, (unsigned HOST_WIDE_INT) I)
-#define pp_wide_int(PP, W, SGN)					\
-  do								\
-    {								\
-      print_dec (W, pp_buffer (PP)->digit_buffer, SGN);		\
-      pp_string (PP, pp_buffer (PP)->digit_buffer);		\
-    }								\
-  while (0)
-#define pp_wide_integer(PP, I) \
-   pp_scalar (PP, HOST_WIDE_INT_PRINT_DEC, (HOST_WIDE_INT) I)
-#define pp_pointer(PP, P)      pp_scalar (PP, "%p", P)
+#define pp_space(PP)			(PP)->space ()
+#define pp_left_paren(PP)		(PP)->left_paren ()
+#define pp_right_paren(PP)		(PP)->right_paren ()
+#define pp_left_bracket(PP)		(PP)->left_bracket ()
+#define pp_right_bracket(PP)		(PP)->right_bracket ()
+#define pp_left_brace(PP)		(PP)->left_brace ()
+#define pp_right_brace(PP)		(PP)->right_brace ()
+#define pp_semicolon(PP)		(PP)->semicolon ()
+#define pp_comma(PP)			(PP)->comma ()
+#define pp_dot(PP)			(PP)->dot ()
+#define pp_colon(PP)			(PP)->colon ()
+#define pp_colon_colon(PP)		(PP)->double_colon ()
+#define pp_arrow(PP)			(PP)->arrow ()
+#define pp_equal(PP)			(PP)->equal ()
+#define pp_question(PP)			(PP)->question ()
+#define pp_bar(PP)			(PP)->bar ()
+#define pp_bar_bar(PP)			(PP)->double_bar ()
+#define pp_carret(PP)			(PP)->carret ()
+#define pp_ampersand(PP)		(PP)->ampersand ()
+#define pp_ampersand_ampersand(PP)	(PP)->double_ampersand ()
+#define pp_less(PP)			(PP)->less ()
+#define pp_less_equal(PP)		(PP)->less_equal ()
+#define pp_greater(PP)			(PP)->greater ()
+#define pp_greater_equal(PP)		(PP)->greater_equal ()
+#define pp_plus(PP)			(PP)->plus ()
+#define pp_minus(PP)			(PP)->minus ()
+#define pp_star(PP)			(PP)->star ()
+#define pp_slash(PP)			(PP)->slash ()
+#define pp_modulo(PP)			(PP)->modulo ()
+#define pp_exclamation(PP)		(PP)->exclamation ()
+#define pp_complement(PP)		(PP)->complement ()
+#define pp_quote(PP)			(PP)->quote ()
+#define pp_backquote(PP)		(PP)->backquote ()
+#define pp_doublequote(PP)		(PP)->doublequote ()
+#define pp_underscore(PP)		(PP)->underscore ()
 
-#define pp_identifier(PP, ID)  pp_string (PP, (pp_translate_identifiers (PP) \
-					  ? identifier_to_locale (ID)	\
-					  : (ID)))
-
+#define pp_maybe_newline_and_indent(PP, N) (PP)->maybe_newline_and_indent (N)
+#define pp_scalar(PP, FORMAT, SCALAR) (PP)->scalar (FORMAT, SCALAR)
+#define pp_decimal_int(PP, I)  (PP)->decimal_int (I)
+#define pp_unsigned_wide_integer(PP, I) (PP)->wide_integer ((unsigned HOST_WIDE_INT) I)
+#define pp_wide_int(PP, W, SGN) (PP)->wide_int (W, SGN)
+#define pp_wide_integer(PP, I) (PP)->wide_integer ((HOST_WIDE_INT) I)
+#define pp_pointer(PP, P) (PP)->pointer (P)
+#define pp_identifier(PP, ID) (PP)->identifier (ID)
 
 #define pp_buffer(PP) (PP)->buffer
 
@@ -439,9 +494,5 @@ typedef pretty_printer::wrapping_mode_t pp_wrapping_mode_t;
 #define pp_maybe_wrap_text(PP, start, end) (PP)->maybe_wrap_text (start, end)
 #define pp_append_r(PP, start, length) (PP)->append_r (start, length)
 #define pp_set_real_maximum_length(PP) (PP)->set_real_maximum_length ()
-
-extern const char *identifier_to_locale (const char *);
-extern void *(*identifier_to_locale_alloc) (size_t);
-extern void (*identifier_to_locale_free) (void *);
 
 #endif /* GCC_PRETTY_PRINT_H */
