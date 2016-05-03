@@ -138,9 +138,9 @@ pretty_printer::clear_state ()
 
 /* Flush the formatted text of PRETTY-PRINTER onto the attached stream.  */
 void
-pretty_printer::write_text_to_stream ()
+base_printer::write_text_to_stream ()
 {
-  pretty_printer *pp = this;
+  base_printer *pp = this;
   const char *text = pp_formatted_text (pp);
   fputs (text, pp_buffer (pp)->stream);
   pp_clear_output_area (pp);
@@ -156,9 +156,9 @@ pretty_printer::write_text_to_stream ()
    be used by routines dumping intermediate representations in graph form.  */
 
 void
-pretty_printer::write_text_as_dot_label_to_stream (bool for_record)
+base_printer::write_text_as_dot_label_to_stream (bool for_record)
 {
-  pretty_printer *pp = this;
+  base_printer *pp = this;
   const char *text = pp_formatted_text (pp);
   const char *p = text;
   FILE *fp = pp_buffer (pp)->stream;
@@ -268,9 +268,9 @@ pretty_printer::append_r (const char *start, int length)
    the column position to the current indentation level, assuming that a
    newline has just been written to the buffer.  */
 void
-pretty_printer::indent ()
+base_printer::indent ()
 {
-  pretty_printer *pp = this;
+  base_printer *pp = this;
   int n = pp_indentation (pp);
   int i;
 
@@ -317,9 +317,9 @@ pretty_printer::indent ()
    Phase 3 is in pp_format_text.  */
 
 void
-pretty_printer::format (text_info *text)
+base_printer::format (text_info *text)
 {
-  pretty_printer *pp = this;
+  base_printer *pp = this;
   output_buffer *buffer = pp_buffer (pp);
   const char *p;
   const char **args;
@@ -499,7 +499,7 @@ pretty_printer::format (text_info *text)
   /* Set output to the argument obstack, and switch line-wrapping and
      prefixing off.  */
   buffer->obstack = &buffer->chunk_obstack;
-  old_wrapping_mode = pp_set_verbatim_wrapping (pp);
+  //old_wrapping_mode = pp_set_verbatim_wrapping (pp); /* FIXME!! */
 
   /* Second phase.  Replace each formatter with the formatted text it
      corresponds to.  */
@@ -673,15 +673,15 @@ pretty_printer::format (text_info *text)
   /* Revert to normal obstack and wrapping mode.  */
   buffer->obstack = &buffer->formatted_obstack;
   buffer->line_length = 0;
-  pp_wrapping_mode (pp) = old_wrapping_mode;
+  //pp_wrapping_mode (pp) = old_wrapping_mode; /* FIXME!! */
   pp_clear_state (pp);
 }
 
 /* Format of a message pointed to by TEXT.  */
 void
-pretty_printer::output_formatted_text ()
+base_printer::output_formatted_text ()
 {
-  pretty_printer *pp = this;
+  base_printer *pp = this;
   unsigned int chunk;
   output_buffer *buffer = pp_buffer (pp);
   struct chunk_info *chunk_array = buffer->cur_chunk_array;
@@ -718,28 +718,18 @@ pretty_printer::format_verbatim (text_info *text)
   pp_wrapping_mode (pp) = oldmode;
 }
 
-/* Flush the content of BUFFER onto the attached stream.  This
-   function does nothing unless pp->output_buffer->flush_p.  */
+/* Flush the content of BUFFER onto the attached stream. If the parameter
+   FORCE is false then this function does nothing unless
+   pp->output_buffer->flush_p.  */
 void
-pretty_printer::flush ()
+base_printer::flush (bool force)
 {
-  pretty_printer *pp = this;
-  pp_clear_state (pp);
-  if (!pp->buffer->flush_p)
-    return;
-  pp_write_text_to_stream (pp);
-  fflush (pp_buffer (pp)->stream);
-}
-
-/* Flush the content of BUFFER onto the attached stream independently
-   of the value of pp->output_buffer->flush_p.  */
-void
-pretty_printer::really_flush ()
-{
-  pretty_printer *pp = this;
-  pp_clear_state (pp);
-  pp_write_text_to_stream (pp);
-  fflush (pp_buffer (pp)->stream);
+  clear_state ();
+  if (buffer->flush_p or force)
+    {
+      write_text_to_stream ();
+      fflush (buffer->stream);
+    }
 }
 
 /* Sets the number of maximum characters per line PRETTY-PRINTER can
@@ -755,9 +745,9 @@ pretty_printer::set_line_maximum_length (int length)
 
 /* Clear PRETTY-PRINTER output area text info.  */
 void
-pretty_printer::clear_output_area ()
+base_printer::clear_output_area ()
 {
-  pretty_printer *pp = this;
+  base_printer *pp = this;
   obstack_free (pp_buffer (pp)->obstack,
                 obstack_base (pp_buffer (pp)->obstack));
   pp_buffer (pp)->line_length = 0;
@@ -822,7 +812,10 @@ pretty_printer::emit_prefix ()
 base_printer::base_printer ()
   : buffer (new (XCNEW (output_buffer)) output_buffer ()),
     format_decoder (),
-    translate_identifiers (true)
+    indent_skip (),
+    need_newline (),
+    translate_identifiers (true),
+    show_color ()
 {
 }
 
@@ -839,11 +832,8 @@ pretty_printer::pretty_printer (const char *p, int l)
   : prefix (),
     padding (pp_none),
     maximum_length (),
-    indent_skip (),
     wrapping (),
-    emitted_prefix (),
-    need_newline (),
-    show_color ()
+    emitted_prefix ()
 {
   pp_line_cutoff (this) = l;
   /* By default, we emit prefixes once per message.  */
@@ -878,18 +868,18 @@ pretty_printer::append_text (const char *start, const char *end)
 /* Finishes constructing a NULL-terminated character string representing
    the PRETTY-PRINTED text.  */
 const char *
-pretty_printer::formatted_text ()
+base_printer::formatted_text ()
 {
-  pretty_printer *pp = this;
+  base_printer *pp = this;
   return output_buffer_formatted_text (pp_buffer (pp));
 }
 
 /*  Return a pointer to the last character emitted in PRETTY-PRINTER's
     output area.  A NULL pointer means no character available.  */
 const char *
-pretty_printer::last_position_in_text () const
+base_printer::last_position_in_text () const
 {
-  const pretty_printer *pp = this;
+  const base_printer *pp = this;
   return output_buffer_last_position_in_text (pp_buffer (pp));
 }
 
@@ -905,9 +895,9 @@ pretty_printer::remaining_character_count_for_line ()
 
 /* Format a message into BUFFER a la printf.  */
 void
-pretty_printer::printf (const char *msg, ...)
+base_printer::printf (const char *msg, ...)
 {
-  pretty_printer *pp = this;
+  base_printer *pp = this;
   text_info text;
   va_list ap;
 
@@ -941,9 +931,9 @@ pretty_printer::verbatim (const char *msg, ...)
 
 /* Have PRETTY-PRINTER start a new line.  */
 void
-pretty_printer::newline ()
+base_printer::newline ()
 {
-  pretty_printer *pp = this;
+  base_printer *pp = this;
   obstack_1grow (pp_buffer (pp)->obstack, '\n');
   pp_needs_newline (pp) = false;
   pp_buffer (pp)->line_length = 0;
@@ -991,9 +981,9 @@ pretty_printer::maybe_space ()
 // Add a newline to the pretty printer PP and flush formatted text.
 
 void
-pretty_printer::newline_and_flush ()
+base_printer::newline_and_flush ()
 {
-  pretty_printer *pp = this;
+  base_printer *pp = this;
   pp_newline (pp);
   pp_flush (pp);
   pp_needs_newline (pp) = false;
@@ -1002,9 +992,9 @@ pretty_printer::newline_and_flush ()
 // Add a newline to the pretty printer PP, followed by indentation.
 
 void
-pretty_printer::newline_and_indent (int n)
+base_printer::newline_and_indent (int n)
 {
-  pretty_printer *pp = this;
+  base_printer *pp = this;
   pp_indentation (pp) += n;
   pp_newline (pp);
   pp_indent (pp);
@@ -1014,9 +1004,9 @@ pretty_printer::newline_and_indent (int n)
 // Add separator C, followed by a single whitespace.
 
 void
-pretty_printer::separate_with (char c)
+base_printer::separate_with (char c)
 {
-  pretty_printer *pp = this;
+  base_printer *pp = this;
   pp_character (pp, c);
   pp_space (pp);
 }
@@ -1032,7 +1022,7 @@ pretty_printer::set_verbatim_wrapping ()
 }
 
 void
-pretty_printer::initialize_color (int value)
+base_printer::initialize_color (int value)
 {
   /* value == -1 is the default value.  */
   if (value < 0)

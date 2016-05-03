@@ -76,14 +76,14 @@ c_objc_common_init (void)
    Please notice when called, the `%' part was already skipped by the
    diagnostic machinery.  */
 static bool
-c_tree_printer (pretty_printer *pp, text_info *text, const char *spec,
+c_tree_printer (base_printer *pp, text_info *text, const char *spec,
 		int precision, bool wide, bool set_locus, bool hash)
 {
   tree t = NULL_TREE;
   tree name;
   // FIXME: the next cast should be a dynamic_cast, when it is permitted.
   c_pretty_printer *cpp = (c_pretty_printer *) pp;
-  pp->padding = pp_none;
+  cpp->padding = pp_none;
 
   if (precision != 0 || wide)
     return false;

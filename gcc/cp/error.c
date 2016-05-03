@@ -100,7 +100,7 @@ static void print_instantiation_partial_context (diagnostic_context *,
 static void cp_diagnostic_starter (diagnostic_context *, diagnostic_info *);
 static void cp_print_error_function (diagnostic_context *, diagnostic_info *);
 
-static bool cp_printer (pretty_printer *, text_info *, const char *,
+static bool cp_printer (base_printer *, text_info *, const char *,
 			int, bool, bool, bool);
 
 /* CONTEXT->printer is a basic pretty printer that was constructed
@@ -3504,7 +3504,7 @@ maybe_print_constexpr_context (diagnostic_context *context)
    %V   cv-qualifier.
    %X   exception-specification.  */
 static bool
-cp_printer (pretty_printer *pp, text_info *text, const char *spec,
+cp_printer (base_printer *pp, text_info *text, const char *spec,
 	    int precision, bool wide, bool set_locus, bool verbose)
 {
   const char *result;
