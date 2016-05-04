@@ -27,6 +27,16 @@ along with GCC; see the file COPYING3.  If not see
 class xml_printer
   : public base_printer
 {
+public:
+  xml_printer ();
+  virtual ~xml_printer ();
+  virtual void initialize_color (int);
+  virtual void append_text (const char *, const char *);
+  virtual void character (char);
+  virtual void string (const char *);
+
+protected:
+  virtual void clear_state ();
 };
 
 bool output_xml_diagnostic (diagnostic_context *context,

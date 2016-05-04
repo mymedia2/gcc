@@ -941,7 +941,7 @@ base_printer::newline ()
 
 /* Have PRETTY-PRINTER add a CHARACTER.  */
 void
-pretty_printer::character (int c)
+pretty_printer::character (char c)
 {
   pretty_printer *pp = this;
   if (pp_is_wrapping_line (pp)

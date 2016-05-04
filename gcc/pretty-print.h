@@ -194,7 +194,7 @@ struct base_printer
   void output_formatted_text ();
   void indent ();
   void newline ();
-  virtual void character (int) = 0;
+  virtual void character (char) = 0;
   virtual void string (const char *) = 0;
   void write_text_to_stream ();
   void write_text_as_dot_label_to_stream (bool);
@@ -340,7 +340,7 @@ struct pretty_printer
   void maybe_space ();
   wrapping_mode_t set_verbatim_wrapping ();
   virtual void append_text (const char *, const char *);
-  virtual void character (int);
+  virtual void character (char);
   virtual void string (const char *);
 
   /* True if PRETTY-PRINTER is in line-wrapping mode.  */
@@ -359,8 +359,9 @@ struct pretty_printer
   /* Nonzero if current PREFIX was emitted at least once.  */
   bool emitted_prefix;
 
-private:
+protected:
   virtual void clear_state ();
+private:
   void wrap_text (const char *start, const char *end);
   void maybe_wrap_text (const char *start, const char *end);
   void append_r (const char *start, int length);

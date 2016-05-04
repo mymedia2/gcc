@@ -80,6 +80,46 @@ output_xml_tag (pretty_printer *pp, const std::string &tag_name)
 
 } /* End of anonymous namespace.  */
 
+xml_printer::xml_printer ()
+{
+}
+
+xml_printer::~xml_printer ()
+{
+}
+
+void
+xml_printer::initialize_color (int)
+{
+  /* nothing doing */
+}
+
+void
+xml_printer::append_text (const char *start, const char *end)
+{
+  output_buffer_append_r (buffer, start, end - start);
+}
+
+void
+xml_printer::character (char c)
+{
+  obstack_1grow (buffer->obstack, c);
+  ++buffer->line_length;
+}
+
+void
+xml_printer::string (const char *str)
+{
+  gcc_checking_assert (str);
+  append_text (str, str + strlen (str));
+}
+
+void
+xml_printer::clear_state ()
+{
+  indent_skip = 0;
+}
+
 bool
 output_xml_diagnostic (diagnostic_context *context, diagnostic_info *diagnostic)
 {
