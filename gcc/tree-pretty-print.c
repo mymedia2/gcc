@@ -36,11 +36,11 @@ along with GCC; see the file COPYING3.  If not see
 
 /* Local functions, macros and variables.  */
 static const char *op_symbol (const_tree);
-static void pretty_print_string (base_printer *, const char*);
-static void newline_and_indent (base_printer *, int);
+static void pretty_print_string (pretty_printer *, const char*);
+static void newline_and_indent (pretty_printer *, int);
 static void maybe_init_pretty_print (FILE *);
-static void print_struct_decl (base_printer *, const_tree, int, int);
-static void do_niy (base_printer *, const_tree, int);
+static void print_struct_decl (pretty_printer *, const_tree, int, int);
+static void do_niy (pretty_printer *, const_tree, int);
 
 #define INDENT(SPACE) do { \
   int i; for (i = 0; i<SPACE; i++) pp_space (pp); } while (0)
@@ -52,7 +52,7 @@ static pretty_printer *tree_pp;
 /* Try to print something for an unknown tree code.  */
 
 static void
-do_niy (base_printer *pp, const_tree node, int flags)
+do_niy (pretty_printer *pp, const_tree node, int flags)
 {
   int i, len;
 
@@ -167,7 +167,7 @@ print_generic_expr (FILE *file, tree t, int flags)
    in tree-sra.c.  */
 
 static void
-dump_fancy_name (base_printer *pp, tree name)
+dump_fancy_name (pretty_printer *pp, tree name)
 {
   int cnt = 0;
   int length = IDENTIFIER_LENGTH (name);
@@ -244,7 +244,7 @@ dump_fancy_name (base_printer *pp, tree name)
    in FLAGS.  */
 
 static void
-dump_decl_name (base_printer *pp, tree node, int flags)
+dump_decl_name (pretty_printer *pp, tree node, int flags)
 {
   if (DECL_NAME (node))
     {
@@ -289,7 +289,7 @@ dump_decl_name (base_printer *pp, tree node, int flags)
 /* Like the above, but used for pretty printing function calls.  */
 
 static void
-dump_function_name (base_printer *pp, tree node, int flags)
+dump_function_name (pretty_printer *pp, tree node, int flags)
 {
   if (CONVERT_EXPR_P (node))
     node = TREE_OPERAND (node, 0);
@@ -303,7 +303,7 @@ dump_function_name (base_printer *pp, tree node, int flags)
    FLAGS are as in dump_generic_node.  */
 
 static void
-dump_function_declaration (base_printer *pp, tree node,
+dump_function_declaration (pretty_printer *pp, tree node,
 			   int spc, int flags)
 {
   bool wrote_arg = false;
@@ -340,7 +340,7 @@ dump_function_declaration (base_printer *pp, tree node,
 /* Dump the domain associated with an array.  */
 
 static void
-dump_array_domain (base_printer *pp, tree domain, int spc, int flags)
+dump_array_domain (pretty_printer *pp, tree domain, int spc, int flags)
 {
   pp_left_bracket (pp);
   if (domain)
@@ -371,7 +371,7 @@ dump_array_domain (base_printer *pp, tree domain, int spc, int flags)
    dump_generic_node.  */
 
 static void
-dump_omp_clause (base_printer *pp, tree clause, int spc, int flags)
+dump_omp_clause (pretty_printer *pp, tree clause, int spc, int flags)
 {
   const char *name;
 
@@ -1049,7 +1049,7 @@ dump_omp_clause (base_printer *pp, tree clause, int spc, int flags)
    dump_generic_node.  */
 
 void
-dump_omp_clauses (base_printer *pp, tree clause, int spc, int flags)
+dump_omp_clauses (pretty_printer *pp, tree clause, int spc, int flags)
 {
   if (clause == NULL)
     return;
@@ -1069,7 +1069,7 @@ dump_omp_clauses (base_printer *pp, tree clause, int spc, int flags)
 /* Dump location LOC to PP.  */
 
 void
-dump_location (base_printer *pp, location_t loc)
+dump_location (pretty_printer *pp, location_t loc)
 {
   expanded_location xloc = expand_location (loc);
 
@@ -1090,7 +1090,7 @@ dump_location (base_printer *pp, location_t loc)
    dump_generic_node.  */
 
 static void
-dump_block_node (base_printer *pp, tree block, int spc, int flags)
+dump_block_node (pretty_printer *pp, tree block, int spc, int flags)
 {
   tree t;
 
@@ -1203,7 +1203,7 @@ dump_block_node (base_printer *pp, tree block, int spc, int flags)
    to be a statement and it is terminated by ';' if appropriate.  */
 
 int
-dump_generic_node (base_printer *pp, tree node, int spc, int flags,
+dump_generic_node (pretty_printer *pp, tree node, int spc, int flags,
 		   bool is_stmt)
 {
   tree type;
@@ -3207,7 +3207,7 @@ dump_generic_node (base_printer *pp, tree node, int spc, int flags,
 /* Print the declaration of a variable.  */
 
 void
-print_declaration (base_printer *pp, tree t, int spc, int flags)
+print_declaration (pretty_printer *pp, tree t, int spc, int flags)
 {
   INDENT (spc);
 
@@ -3308,7 +3308,7 @@ print_declaration (base_printer *pp, tree t, int spc, int flags)
    FIXME: Still incomplete.  */
 
 static void
-print_struct_decl (base_printer *pp, const_tree node, int spc, int flags)
+print_struct_decl (pretty_printer *pp, const_tree node, int spc, int flags)
 {
   /* Print the name of the structure.  */
   if (TYPE_NAME (node))
@@ -3704,7 +3704,7 @@ op_symbol (const_tree op)
    the gimple_call_fn of a GIMPLE_CALL.  */
 
 void
-print_call_name (base_printer *pp, tree node, int flags)
+print_call_name (pretty_printer *pp, tree node, int flags)
 {
   tree op0 = node;
 
@@ -3763,7 +3763,7 @@ print_call_name (base_printer *pp, tree node, int flags)
 /* Parses the string STR and replaces new-lines by '\n', tabs by '\t', ...  */
 
 static void
-pretty_print_string (base_printer *pp, const char *str)
+pretty_print_string (pretty_printer *pp, const char *str)
 {
   if (str == NULL)
     return;
@@ -3860,7 +3860,7 @@ maybe_init_pretty_print (FILE *file)
 }
 
 static void
-newline_and_indent (base_printer *pp, int spc)
+newline_and_indent (pretty_printer *pp, int spc)
 {
   pp_newline (pp);
   INDENT (spc);
@@ -3921,7 +3921,7 @@ percent_K_format (text_info *text)
 /* Print the identifier ID to PRETTY-PRINTER.  */
 
 void
-pp_tree_identifier (base_printer *pp, tree id)
+pp_tree_identifier (pretty_printer *pp, tree id)
 {
   if (pp_translate_identifiers (pp))
     {
@@ -3974,7 +3974,7 @@ dump_function_header (FILE *dump_file, tree fdecl, int flags)
 /* Dump double_int D to pretty_printer PP.  UNS is true
    if D is unsigned and false otherwise.  */
 void
-pp_double_int (base_printer *pp, double_int d, bool uns)
+pp_double_int (pretty_printer *pp, double_int d, bool uns)
 {
   if (d.fits_shwi ())
     pp_wide_integer (pp, d.low);

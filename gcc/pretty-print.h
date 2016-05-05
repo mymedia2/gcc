@@ -42,8 +42,8 @@ struct text_info
 };
 
 /* How often diagnostics are prefixed by their locations:
-   o DIAGNOSTICS_SHOW_PREFIX_NEVER: never - not yet supported;
    o DIAGNOSTICS_SHOW_PREFIX_ONCE: emit only once;
+   o DIAGNOSTICS_SHOW_PREFIX_NEVER: never - not yet supported;
    o DIAGNOSTICS_SHOW_PREFIX_EVERY_LINE: emit each time a physical
    line is started.  */
 enum diagnostic_prefixing_rule_t
@@ -150,6 +150,36 @@ extern const char *identifier_to_locale (const char *);
 extern void *(*identifier_to_locale_alloc) (size_t);
 extern void (*identifier_to_locale_free) (void *);
 
+struct base_printer
+{
+  /* The type of a hook that formats client-specific data onto a pretty_printer.
+     A client-supplied formatter returns true if everything goes well,
+     otherwise it returns false.  */
+  typedef bool (*printer_fn) (pretty_printer *, text_info *, const char *,
+			      int, bool, bool, bool);
+
+  explicit base_printer ();
+
+  virtual ~base_printer ();
+
+  /* Where we print external representation of ENTITY.  */
+  output_buffer *buffer;
+
+  /* If non-NULL, this function formats a TEXT into the BUFFER.  When called,
+     TEXT->format_spec points to a format code.  FORMAT_DECODER should call
+     pp_string (and related functions) to add data to the BUFFER.
+     FORMAT_DECODER can read arguments from *TEXT->args_pts using VA_ARG.
+     If the BUFFER needs additional characters from the format string, it
+     should advance the TEXT->format_spec as it goes.  When FORMAT_DECODER
+     returns, TEXT->format_spec should point to the last character processed.
+  */
+  printer_fn format_decoder;
+
+  /* Nonzero means identifiers are translated to the locale character
+     set on output.  */
+  bool translate_identifiers;
+};
+
 /* If we haven't already defined a front-end-specific diagnostics
    style, use the generic one.  */
 #ifdef GCC_DIAG_STYLE
@@ -164,40 +194,69 @@ extern void (*identifier_to_locale_free) (void *);
 #define ATTRIBUTE_GCC_PPDIAG(m, n) ATTRIBUTE_NONNULL(m)
 #endif
 
-struct base_printer
+/* The data structure that contains the bare minimum required to do
+   proper pretty-printing.  Clients may derived from this structure
+   and add additional fields they need.  */
+struct pretty_printer
+  : base_printer
 {
-  /* The type of a hook that formats client-specific data onto a pretty_printer.
-     A client-supplied formatter returns true if everything goes well,
-     otherwise it returns false.  */
-  typedef bool (*printer_fn) (base_printer *, text_info *, const char *,
-			      int, bool, bool, bool);
+  /* The type of pretty-printer flags passed to clients.  */
+  typedef unsigned int flags_t;
 
-  base_printer ();
-  virtual ~base_printer ();
+  enum padding_t { pp_none, pp_before, pp_after };
+
+  /* Structure for switching in and out of verbatim mode in a convenient
+     manner.  */
+  struct wrapping_mode_t
+  {
+    /* Current prefixing rule.  */
+    diagnostic_prefixing_rule_t rule;
+
+    /* The ideal upper bound of number of characters per line, as suggested
+       by front-end.  */
+    int line_cutoff;
+  };
+
+  // Default construct a pretty printer with specified prefix
+  // and a maximum line length cut off limit.
+  explicit pretty_printer (const char* = NULL, int = 0);
+
+  virtual ~pretty_printer ();
+
+  const char *get_prefix () const { return prefix; }
+  void set_prefix (const char *);
+  void destroy_prefix ();
+  void emit_prefix ();
 
   /* True if colors should be shown.  */
   bool get_color_state () { return show_color; }
 
   /* Maybe initialize the color support. */
-  virtual void initialize_color (int value = -1);
+  void initialize_color (int value = -1);
 
+  void set_line_maximum_length (int);
+  int remaining_character_count_for_line ();
   void clear_output_area ();
   const char *formatted_text ();
   const char *last_position_in_text () const;
-  virtual void append_text (const char *, const char *) = 0;
+  void append_text (const char *, const char *);
   void newline_and_flush ();
   void newline_and_indent (int);
   void separate_with (char);
   void printf (const char *, ...) ATTRIBUTE_GCC_PPDIAG(2,3);
+  void verbatim (const char *, ...) ATTRIBUTE_GCC_PPDIAG(2,3);
   void flush (bool force = false);
   void format (text_info *);
-  virtual void output_text_or_xml_tag (std::string tagname = "");
+  void output_formatted_text ();
+  void format_verbatim (text_info *);
   void indent ();
   void newline ();
-  virtual void character (char) = 0;
-  virtual void string (const char *) = 0;
+  void character (char);
+  void string (const char *);
   void write_text_to_stream ();
   void write_text_as_dot_label_to_stream (bool);
+  void maybe_space ();
+  wrapping_mode_t set_verbatim_wrapping ();
 
   void space ()			{ character (' '); }
   void left_paren ()		{ character ('('); }
@@ -268,82 +327,6 @@ struct base_printer
       string (translate_identifiers ? identifier_to_locale (id) : id);
     }
 
-  /* Where we print external representation of ENTITY.  */
-  output_buffer *buffer;
-
-  /* If non-NULL, this function formats a TEXT into the BUFFER.  When called,
-     TEXT->format_spec points to a format code.  FORMAT_DECODER should call
-     pp_string (and related functions) to add data to the BUFFER.
-     FORMAT_DECODER can read arguments from *TEXT->args_pts using VA_ARG.
-     If the BUFFER needs additional characters from the format string, it
-     should advance the TEXT->format_spec as it goes.  When FORMAT_DECODER
-     returns, TEXT->format_spec should point to the last character processed.
-  */
-  printer_fn format_decoder;
-
-  /* Indentation count.  */
-  int indent_skip;
-
-  /* Nonzero means one should emit a newline before outputting anything.  */
-  bool need_newline;
-
-  /* Nonzero means identifiers are translated to the locale character
-     set on output.  */
-  bool translate_identifiers;
-
-protected:
-  virtual void clear_state () = 0;
-
-private:
-  /* Nonzero means that text should be colorized.  */
-  bool show_color;
-};
-
-/* The data structure that contains the bare minimum required to do
-   proper pretty-printing.  Clients may derived from this structure
-   and add additional fields they need.  */
-struct pretty_printer
-  : base_printer
-{
-  /* The type of pretty-printer flags passed to clients.  */
-  typedef unsigned int flags_t;
-
-  enum padding_t { pp_none, pp_before, pp_after };
-
-  /* Structure for switching in and out of verbatim mode in a convenient
-     manner.  */
-  struct wrapping_mode_t
-  {
-    /* Current prefixing rule.  */
-    diagnostic_prefixing_rule_t rule;
-
-    /* The ideal upper bound of number of characters per line, as suggested
-       by front-end.  */
-    int line_cutoff;
-  };
-
-  // Default construct a pretty printer with specified prefix
-  // and a maximum line length cut off limit.
-  explicit pretty_printer (const char* = NULL, int = 0);
-
-  virtual ~pretty_printer ();
-
-  const char *get_prefix () const { return prefix; }
-  void set_prefix (const char *);
-  void destroy_prefix ();
-  void emit_prefix ();
-
-  void set_line_maximum_length (int);
-  int remaining_character_count_for_line ();
-  void verbatim (const char *, ...) ATTRIBUTE_GCC_PPDIAG(2,3);
-  void format_verbatim (text_info *);
-  void maybe_space ();
-  wrapping_mode_t set_verbatim_wrapping ();
-  virtual void append_text (const char *, const char *);
-  virtual void character (char);
-  virtual void string (const char *);
-  virtual void output_text_or_xml_tag (std::string tagname = "");
-
   /* True if PRETTY-PRINTER is in line-wrapping mode.  */
   bool is_wrapping_line () { return wrapping.line_cutoff > 0; }
 
@@ -354,15 +337,20 @@ struct pretty_printer
      account the case of a very very looong prefix.  */
   int maximum_length;
 
+  /* Indentation count.  */
+  int indent_skip;
+
   /* Current wrapping mode.  */
   wrapping_mode_t wrapping;
 
   /* Nonzero if current PREFIX was emitted at least once.  */
   bool emitted_prefix;
 
-protected:
-  virtual void clear_state ();
+  /* Nonzero means one should emit a newline before outputting anything.  */
+  bool need_newline;
+
 private:
+  void clear_state ();
   void wrap_text (const char *start, const char *end);
   void maybe_wrap_text (const char *start, const char *end);
   void append_r (const char *start, int length);
@@ -370,6 +358,9 @@ private:
 
   /* The prefix for each new line.  */
   const char *prefix;
+
+  /* Nonzero means that text should be colorized.  */
+  bool show_color;
 };
 
 

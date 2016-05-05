@@ -30,14 +30,7 @@ class xml_printer
 public:
   xml_printer ();
   virtual ~xml_printer ();
-  virtual void initialize_color (int);
-  virtual void append_text (const char *, const char *);
-  virtual void character (char);
-  virtual void string (const char *);
-  virtual void output_text_or_xml_tag (const std::string &tagname);
-
-protected:
-  virtual void clear_state ();
+  void output_xml_tag (const std::string &tag_name);
 };
 
 bool output_xml_diagnostic (diagnostic_context *context,

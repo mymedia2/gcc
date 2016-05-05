@@ -49,8 +49,10 @@ xmlspecialchars (std::string str)
   return str;
 }
 
+} /* End of anonymous namespace.  */
+
 void
-output_xml_tag (pretty_printer *pp, const std::string &tagname)
+output_xml_tag (pretty_printer *pp, const std::string &tag_name)
 {
   output_buffer *buffer = pp_buffer (pp);
   struct chunk_info *chunk_array = buffer->cur_chunk_array;
@@ -78,46 +80,12 @@ output_xml_tag (pretty_printer *pp, const std::string &tagname)
   obstack_free (&buffer->chunk_obstack, chunk_array);
 }
 
-} /* End of anonymous namespace.  */
-
 xml_printer::xml_printer ()
 {
 }
 
 xml_printer::~xml_printer ()
 {
-}
-
-void
-xml_printer::initialize_color (int)
-{
-  /* nothing doing */
-}
-
-void
-xml_printer::append_text (const char *start, const char *end)
-{
-  output_buffer_append_r (buffer, start, end - start);
-}
-
-void
-xml_printer::character (char c)
-{
-  obstack_1grow (buffer->obstack, c);
-  ++buffer->line_length;
-}
-
-void
-xml_printer::string (const char *str)
-{
-  gcc_checking_assert (str);
-  append_text (str, str + strlen (str));
-}
-
-void
-xml_printer::clear_state ()
-{
-  indent_skip = 0;
 }
 
 bool
@@ -175,7 +143,7 @@ output_xml_diagnostic (diagnostic_context *context, diagnostic_info *diagnostic)
   pp_format (context->printer, &diagnostic->message);
   (*diagnostic_starter (context)) (context, diagnostic);
   pp_output_formatted_text (context->printer);
-  output_text_or_xml_tag (context->printer, "description");
+  output_xml_tag (context->printer, "description");
   (*diagnostic_finalizer (context)) (context, diagnostic);
   diagnostic_action_after_output (context, diagnostic->kind);
   diagnostic->message.format_spec = saved_format_spec;
