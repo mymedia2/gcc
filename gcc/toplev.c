@@ -2078,6 +2078,9 @@ toplev::main (int argc, char **argv)
 
   handle_common_deferred_options ();
 
+  /* Repeated initialization after parse command line options. */
+  init_options_once ();
+
   init_local_tick ();
 
   initialize_plugins ();

@@ -134,8 +134,16 @@ diagnostic_initialize (diagnostic_context *context, int n_opts)
 
   /* Allocate a basic pretty-printer.  Clients will replace this a
      much more elaborated pretty-printer if they wish.  */
-  context->printer = XNEW (pretty_printer);
-  new (context->printer) pretty_printer ();
+  if (context->xml_output_format)
+    {
+      xml_printer *xp = XNEW (xml_printer);
+      context->printer = (pretty_printer *) new (xp) xml_printer ();
+    }
+  else
+    {
+      context->printer = XNEW (pretty_printer);
+      new (context->printer) pretty_printer ();
+    }
 
   memset (context->diagnostic_count, 0, sizeof context->diagnostic_count);
   context->warning_as_error_requested = false;
@@ -761,10 +769,8 @@ diagnostic_report_diagnostic (diagnostic_context *context,
     ++diagnostic_kind_count (context, diagnostic->kind);
 
   // maybe insert our code here
-  if (context->xml_output_format == DIAGNOSTICS_FORMAT_XML)
-    {
-      return output_xml_diagnostic (context, diagnostic);
-    }
+  if (context->xml_output_format)
+    return output_xml_diagnostic (context, diagnostic);
 
   context->lock++;
 

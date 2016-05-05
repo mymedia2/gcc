@@ -50,7 +50,7 @@ xmlspecialchars (std::string str)
 }
 
 void
-output_xml_tag (pretty_printer *pp, const std::string &tag_name)
+output_xml_tag (pretty_printer *pp, const std::string &tagname)
 {
   output_buffer *buffer = pp_buffer (pp);
   struct chunk_info *chunk_array = buffer->cur_chunk_array;
@@ -173,9 +173,9 @@ output_xml_diagnostic (diagnostic_context *context, diagnostic_info *diagnostic)
   diagnostic->message.x_data = &diagnostic->x_data;
   diagnostic->x_data = NULL;
   pp_format (context->printer, &diagnostic->message);
-  //(*diagnostic_starter (context)) (context, diagnostic);
-  //pp_output_formatted_text (context->printer);
-  output_xml_tag (context->printer, "description");
+  (*diagnostic_starter (context)) (context, diagnostic);
+  pp_output_formatted_text (context->printer);
+  output_text_or_xml_tag (context->printer, "description");
   (*diagnostic_finalizer (context)) (context, diagnostic);
   diagnostic_action_after_output (context, diagnostic->kind);
   diagnostic->message.format_spec = saved_format_spec;

@@ -34,6 +34,7 @@ public:
   virtual void append_text (const char *, const char *);
   virtual void character (char);
   virtual void string (const char *);
+  virtual void output_text_or_xml_tag (const std::string &tagname);
 
 protected:
   virtual void clear_state ();

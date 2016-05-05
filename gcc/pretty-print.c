@@ -679,7 +679,7 @@ base_printer::format (text_info *text)
 
 /* Format of a message pointed to by TEXT.  */
 void
-base_printer::output_formatted_text ()
+base_printer::output_text_or_xml_tag (std::string tagname)
 {
   base_printer *pp = this;
   unsigned int chunk;

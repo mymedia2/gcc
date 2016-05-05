@@ -191,7 +191,7 @@ struct base_printer
   void printf (const char *, ...) ATTRIBUTE_GCC_PPDIAG(2,3);
   void flush (bool force = false);
   void format (text_info *);
-  void output_formatted_text ();
+  virtual void output_text_or_xml_tag (std::string tagname = "");
   void indent ();
   void newline ();
   virtual void character (char) = 0;
@@ -342,6 +342,7 @@ struct pretty_printer
   virtual void append_text (const char *, const char *);
   virtual void character (char);
   virtual void string (const char *);
+  virtual void output_text_or_xml_tag (std::string tagname = "");
 
   /* True if PRETTY-PRINTER is in line-wrapping mode.  */
   bool is_wrapping_line () { return wrapping.line_cutoff > 0; }
