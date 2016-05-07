@@ -134,16 +134,8 @@ diagnostic_initialize (diagnostic_context *context, int n_opts)
 
   /* Allocate a basic pretty-printer.  Clients will replace this a
      much more elaborated pretty-printer if they wish.  */
-  if (context->xml_output_format)
-    {
-      xml_printer *xp = XNEW (xml_printer);
-      context->printer = (pretty_printer *) new (xp) xml_printer ();
-    }
-  else
-    {
-      context->printer = XNEW (pretty_printer);
-      new (context->printer) pretty_printer ();
-    }
+  context->printer = XNEW (pretty_printer);
+  new (context->printer) pretty_printer ();
 
   memset (context->diagnostic_count, 0, sizeof context->diagnostic_count);
   context->warning_as_error_requested = false;
@@ -177,6 +169,7 @@ diagnostic_initialize (diagnostic_context *context, int n_opts)
   context->x_data = NULL;
   context->lock = 0;
   context->inhibit_notes_p = false;
+  context->xml_output_format = false;
 }
 
 /* Maybe initialize the color support. We require clients to do this

@@ -27,6 +27,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "flags.h"
 #include "params.h"
 #include "diagnostic.h"
+#include "diagnostic-xml.h"
 #include "opts-diagnostic.h"
 #include "insn-attr-common.h"
 #include "common/common-target.h"
@@ -1865,9 +1866,9 @@ common_handle_option (struct gcc_options *opts,
       diagnostic_color_init (dc, value);
       break;
 
-	case OPT_fdiagnostics_output_format_:
-	  dc->xml_output_format = value;
-	  break;
+    case OPT_fdiagnostics_output_format_:
+      initialize_xml_output (dc, value);
+      break;
 
     case OPT_fdiagnostics_show_option:
       dc->show_option_requested = value;

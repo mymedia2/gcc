@@ -202,16 +202,8 @@ void
 c_initialize_diagnostics (diagnostic_context *context)
 {
   pretty_printer *base = context->printer;
-  if (context->xml_output_format)
-    {
-      xml_printer *xp = XNEW (xml_printer);
-      context->printer = (pretty_printer *) new (xp) xml_printer ();
-    }
-  else
-    {
-      c_pretty_printer *pp = XNEW (c_pretty_printer);
-      context->printer = new (pp) c_pretty_printer ();
-    }
+  c_pretty_printer *pp = XNEW (c_pretty_printer);
+  context->printer = new (pp) c_pretty_printer ();
 
   /* It is safe to free this object because it was previously XNEW()'d.  */
   base->~pretty_printer ();

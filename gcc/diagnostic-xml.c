@@ -52,9 +52,8 @@ xmlspecialchars (std::string str)
 } /* End of anonymous namespace.  */
 
 void
-output_xml_tag (pretty_printer *pp, const std::string &tag_name)
+xml_printer::output_xml_tag (const std::string &tag_name)
 {
-  output_buffer *buffer = pp_buffer (pp);
   struct chunk_info *chunk_array = buffer->cur_chunk_array;
   const char **args = chunk_array->args;
 
@@ -67,12 +66,12 @@ output_xml_tag (pretty_printer *pp, const std::string &tag_name)
 
   /* This is a third phase of XML output, first 2 phases done in pp_format_args.
      Now we escape characters and actually print it.  */
-  pp_string (pp, opening_tag.c_str ());
+  string (opening_tag.c_str ());
   for (unsigned int i = 0; args[i]; i++)
     {
-      pp_string (pp, xmlspecialchars (args[i]).c_str ());
+      string (xmlspecialchars (args[i]).c_str ());
     }
-  pp_string (pp, closing_tag.c_str ());
+  string (closing_tag.c_str ());
 
   /* Deallocate the chunk structure and everything after it (i.e. the
      associated series of formatted strings).  */
@@ -86,6 +85,15 @@ xml_printer::xml_printer ()
 
 xml_printer::~xml_printer ()
 {
+}
+
+void
+initialize_xml_output (diagnostic_context *context, bool value)
+{
+  if (!value)
+    return;
+  context->xml_output_format = true;
+  context->printer->set_verbatim_wrapping ();
 }
 
 bool
@@ -116,6 +124,11 @@ output_xml_diagnostic (diagnostic_context *context, diagnostic_info *diagnostic)
     }
 
   const char *saved_format_spec = diagnostic->message.format_spec;
+
+  context->printer->string (("<description>" +
+			     xmlspecialchars (diagnostic->message.format_spec) +
+			     "</description>").c_str ());
+
   if (context->show_option_requested)
     {
       char *option_text;
@@ -126,10 +139,9 @@ output_xml_diagnostic (diagnostic_context *context, diagnostic_info *diagnostic)
 
       if (option_text)
 	{
-	  diagnostic->message.format_spec
-	    = ACONCAT ((diagnostic->message.format_spec,
-			" [", option_text, "]",
-			NULL));
+	  context->printer->string (("<option>" +
+				     xmlspecialchars (option_text) +
+				     "</option>").c_str ());
 	  free (option_text);
 	}
     }
@@ -143,7 +155,6 @@ output_xml_diagnostic (diagnostic_context *context, diagnostic_info *diagnostic)
   pp_format (context->printer, &diagnostic->message);
   (*diagnostic_starter (context)) (context, diagnostic);
   pp_output_formatted_text (context->printer);
-  output_xml_tag (context->printer, "description");
   (*diagnostic_finalizer (context)) (context, diagnostic);
   diagnostic_action_after_output (context, diagnostic->kind);
   diagnostic->message.format_spec = saved_format_spec;

@@ -25,7 +25,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "diagnostic.h"
 
 class xml_printer
-  : public base_printer
+  : public pretty_printer
 {
 public:
   xml_printer ();
@@ -35,5 +35,6 @@ public:
 
 bool output_xml_diagnostic (diagnostic_context *context,
 			    diagnostic_info *diagnostic);
+void initialize_xml_output (diagnostic_context *context, bool value = true);
 
 #endif  // GCC_DIAGNOSTIC_XML_H
