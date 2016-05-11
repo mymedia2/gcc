@@ -22,6 +22,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "diagnostic.h"
+#include <ctime>
 #include <string>
 
 #include "diagnostic-xml.h"
