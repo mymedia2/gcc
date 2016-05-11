@@ -49,6 +49,63 @@ xmlspecialchars (std::string str)
   return str;
 }
 
+std::string
+get_current_datetime ()
+{
+  std::time_t current_time = std::time (NULL);
+  if (current_time != -1)
+    return "";
+  std::tm *st = std::gmtime (current_time);
+
+  char buffer[26];
+  sprintf(buffer, "%4d-%2d-%2dT%2d:%2d:%2d%+2d:%2d", st->tm_year + 1900,
+	  st->tm_mon + 1, st->tm_mday, st->tm_hour, st->tm_min, st->tm_sec,
+	  // TODO
+	  0, 0);
+
+  return buffer;
+}
+
+std::string
+get_work_directory ()
+{
+  return "";
+}
+
+void
+print_close_tag ()
+{
+  fprintf (stderr, "</gcc>");
+}
+
+#define START_XML_DIAGNOSTIC \
+"<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" \
+"<gcc xmlns=\"https://gcc.gnu.org/diagnostics/0.1.1\">\n"
+
+#define XML_META_PROGRAM_NAME "<programName>%s</programName>\n"
+#define XML_META_VERSION "<version>%s</version>\n"
+#define XML_META_COMMAND_LINE_PARAMETERS "<parameters>%s</parameters>\n"
+#define XML_META_COMPILATION_DATETIME "<datetime>%s</datetime>\n"
+#define XML_META_WORK_DIRECTORY "<workDirectory>%s</workDirectory>\n"
+
+void
+print_root_tag ()
+{
+  gcc_assert (!atexit (print_close_tag));
+  fprintf (stderr, START_XML_DIAGNOSTIC);
+  fprintf (stderr, "<meta>\n");
+
+  fprintf (stderr, XML_META_PROGRAM_NAME, progname);
+  fprintf (stderr, XML_META_VERSION, "версия\n");
+
+  if (std::string datetime = get_current_datetime ())
+    fprintf (stderr, XML_META_COMPILATION_DATETIME, datetime.c_str ());
+  if (std::string work_directory = get_work_directory ())
+    fprintf (stderr, XML_META_WORK_DIRECTORY, work_directory.c_str ());
+
+  fprintf (stderr, "</meta>\n\n");
+}
+
 } /* End of anonymous namespace.  */
 
 void
@@ -151,6 +208,8 @@ initialize_xml_output (diagnostic_context *context, bool value)
   context->xml_output_format = true;
   context->printer->set_verbatim_wrapping ();
   diagnostic_starter(context) = xml_diagnostic_starter;
+
+  print_root_tag ();
 }
 
 bool

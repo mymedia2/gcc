@@ -47,4 +47,4 @@ DEFINE_DIAGNOSTIC_KIND (DK_PERMERROR, "permerror: ", NULL, "permission error")
 DEFINE_DIAGNOSTIC_KIND (DK_WERROR, "error: ", NULL, "warning as error")
 /* This is like DK_ICE, but backtrace is not printed.  Used in the driver
    when reporting fatal signal in the compiler.  */
-DEFINE_DIAGNOSTIC_KIND (DK_ICE_NOBT, "internal compiler error: ", "error", "internal compiler error")
+DEFINE_DIAGNOSTIC_KIND (DK_ICE_NOBT, "internal compiler error: ", "error", "internal error")
