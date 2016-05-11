@@ -56,7 +56,7 @@ get_current_datetime ()
   std::time_t current_time = std::time (NULL);
   if (current_time != -1)
     return "";
-  std::tm *st = std::gmtime (current_time);
+  std::tm *st = std::gmtime (&current_time);
 
   char buffer[26];
   sprintf(buffer, "%4d-%2d-%2dT%2d:%2d:%2d%+2d:%2d", st->tm_year + 1900,
