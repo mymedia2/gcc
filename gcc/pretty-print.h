@@ -42,8 +42,8 @@ struct text_info
 };
 
 /* How often diagnostics are prefixed by their locations:
-   o DIAGNOSTICS_SHOW_PREFIX_NEVER: never - not yet supported;
    o DIAGNOSTICS_SHOW_PREFIX_ONCE: emit only once;
+   o DIAGNOSTICS_SHOW_PREFIX_NEVER: never - not yet supported;
    o DIAGNOSTICS_SHOW_PREFIX_EVERY_LINE: emit each time a physical
    line is started.  */
 enum diagnostic_prefixing_rule_t
