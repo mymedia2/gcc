@@ -86,6 +86,62 @@ xml_printer::xml_printer ()
 xml_printer::~xml_printer ()
 {
 }
+/*Copy-paste from diagnostic_report_current_module*/
+void
+report_includedFrom_tag (diagnostic_context *context, location_t where)
+{
+  const line_map_ordinary *map = NULL;
+
+  if (pp_needs_newline (context->printer))
+    {
+      pp_newline (context->printer);
+      pp_needs_newline (context->printer) = false;
+    }
+
+  if (where <= BUILTINS_LOCATION)
+    return;
+
+  linemap_resolve_location (line_table, where,
+			    LRK_MACRO_DEFINITION_LOCATION,
+			    &map);
+
+  if (map && diagnostic_last_module_changed (context, map))
+    {
+      diagnostic_set_last_module (context, map);
+      if (! MAIN_FILE_P (map))
+	{
+	  map = INCLUDED_FROM (line_table, map);
+	  pp_verbatim(context->printer, "<includedFrom>");
+	  if (context->show_column)
+	    pp_verbatim (context->printer,
+			 "<file><filename>%s</filename><locations><mark caret=\"%d,%d\" /></locations></file>",
+			 xmlspecialchars(LINEMAP_FILE (map)).c_str(),
+			 LAST_SOURCE_LINE (map), LAST_SOURCE_COLUMN (map));
+	  else
+	    pp_verbatim (context->printer,
+			 "<file><filename>%s</filename><locations><mark caret=\"%d\" /></locations></file>",
+			 xmlspecialchars(LINEMAP_FILE (map)).c_str(), LAST_SOURCE_LINE (map));
+	  while (! MAIN_FILE_P (map))
+	    {
+	      map = INCLUDED_FROM (line_table, map);
+	      pp_verbatim (context->printer,
+			   "<file><filename>%s</filename><locations><mark caret=\"%d\" /></locations></file>\n",
+			   xmlspecialchars(LINEMAP_FILE (map)).c_str(), LAST_SOURCE_LINE (map));
+	    }
+	  pp_verbatim (context->printer, "</includedFrom>");
+	  pp_newline (context->printer);
+	}
+    }
+}
+
+void
+xml_diagnostic_starter (diagnostic_context *context,
+			    diagnostic_info *diagnostic)
+{
+  report_includedFrom_tag (context, diagnostic_location (diagnostic));
+  pp_set_prefix (context->printer, diagnostic_build_prefix (context,
+							    diagnostic));
+}
 
 void
 initialize_xml_output (diagnostic_context *context, bool value)
@@ -94,6 +150,7 @@ initialize_xml_output (diagnostic_context *context, bool value)
     return;
   context->xml_output_format = true;
   context->printer->set_verbatim_wrapping ();
+  diagnostic_starter(context) = xml_diagnostic_starter;
 }
 
 bool

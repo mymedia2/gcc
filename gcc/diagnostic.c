@@ -244,7 +244,7 @@ diagnostic_set_info (diagnostic_info *diagnostic, const char *gmsgid,
 }
 
 static const char *const diagnostic_kind_color[] = {
-#define DEFINE_DIAGNOSTIC_KIND(K, T, C) (C),
+#define DEFINE_DIAGNOSTIC_KIND(K, T, C, X) (C),
 #include "diagnostic.def"
 #undef DEFINE_DIAGNOSTIC_KIND
   NULL
@@ -292,7 +292,7 @@ diagnostic_build_prefix (diagnostic_context *context,
 			 const diagnostic_info *diagnostic)
 {
   static const char *const diagnostic_kind_text[] = {
-#define DEFINE_DIAGNOSTIC_KIND(K, T, C) (T),
+#define DEFINE_DIAGNOSTIC_KIND(K, T, C, X) (T),
 #include "diagnostic.def"
 #undef DEFINE_DIAGNOSTIC_KIND
     "must-not-happen"
