@@ -54,7 +54,7 @@ std::string
 get_current_datetime ()
 {
   std::time_t current_time = std::time (NULL);
-  if (current_time != -1)
+  if (current_time == -1)
     return "";
   std::tm *st = std::gmtime (&current_time);
 
@@ -70,6 +70,13 @@ get_current_datetime ()
 std::string
 get_work_directory ()
 {
+  char* pwd = getcwd (NULL, 0);
+  if (pwd)
+    {
+      std::string result = pwd;
+      free (pwd);
+      return result;
+    }
   return "";
 }
 
@@ -102,6 +109,7 @@ print_root_tag ()
   std::string datetime = get_current_datetime ();
   if (datetime != "")
     fprintf (stderr, XML_META_COMPILATION_DATETIME, datetime.c_str ());
+
   std::string work_directory = get_work_directory ();
   if (work_directory != "")
     fprintf (stderr, XML_META_WORK_DIRECTORY, work_directory.c_str ());
