@@ -99,9 +99,11 @@ print_root_tag ()
   fprintf (stderr, XML_META_PROGRAM_NAME, progname);
   fprintf (stderr, XML_META_VERSION, "версия\n");
 
-  if (std::string datetime = get_current_datetime ())
+  std::string datetime = get_current_datetime ();
+  if (datetime != "")
     fprintf (stderr, XML_META_COMPILATION_DATETIME, datetime.c_str ());
-  if (std::string work_directory = get_work_directory ())
+  std::string work_directory = get_work_directory ();
+  if (work_directory != "")
     fprintf (stderr, XML_META_WORK_DIRECTORY, work_directory.c_str ());
 
   fprintf (stderr, "</meta>\n\n");
